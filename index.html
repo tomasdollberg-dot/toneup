@@ -51,12 +51,12 @@ img{max-width:100%}
 .auth .pchips{margin-bottom:14px}
 
 /* inicio, técnica, asistente, rutinas */
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
-.tile{border:1px solid var(--line-soft);background:var(--surface);box-shadow:var(--sh);border-radius:var(--r-lg);padding:8px 8px 12px;text-align:left;display:flex;flex-direction:column;gap:2px;min-width:0}
-.tile:hover{border-color:var(--line)}
-.tile .tf{background:var(--raised);border-radius:var(--r-md);height:92px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;overflow:hidden}
-.tile .tf svg{height:100%;width:auto;max-width:100%}
-.tile b{font-size:15px;padding:0 4px;overflow-wrap:anywhere}.tile small{color:var(--muted);font-size:12px;padding:0 4px}
+.zones{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.zone{border:1px solid var(--line-soft);background:var(--surface);box-shadow:var(--sh);border-radius:var(--r-lg);padding:8px 8px 12px;text-align:left;display:flex;flex-direction:column;gap:2px;min-width:0}
+.zone:hover{border-color:var(--line)}
+.zone .tf{background:var(--raised);border-radius:var(--r-md);height:112px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;overflow:hidden}
+.zone .tf svg{height:100%;width:auto;max-width:100%}
+.zone b{font-family:var(--font-display);font-size:21px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.05;padding:0 4px;overflow-wrap:anywhere}.zone small{color:var(--muted);font-size:12px;padding:0 4px}
 .h2{margin:22px 0 10px;font-family:'Big Shoulders Display',sans-serif;font-size:22px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
 .hero p{margin:4px 0 12px}.hero h3{margin:0}
 .tec{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin:10px 0}
@@ -124,11 +124,11 @@ button{cursor:pointer}
 
 /* cabecera */
 .hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 0 16px}
-.brand{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:800;font-size:19px;letter-spacing:.06em;text-transform:uppercase}
+.brand{display:flex;align-items:center;gap:9px;min-width:0;white-space:nowrap;font-family:var(--font-display);font-weight:800;font-size:18px;letter-spacing:.06em;text-transform:uppercase}
 .plate{width:24px;height:24px;border-radius:50%;background:var(--sc);flex:none;
   -webkit-mask:radial-gradient(circle at center,transparent 0 27%,#000 28%);mask:radial-gradient(circle at center,transparent 0 27%,#000 28%)}
 .outb{font:inherit;font-weight:700;color:var(--red);background:none;border:0;border-left:1px solid var(--line);margin-left:6px;padding:0 0 0 8px;cursor:pointer}
-.status{font-size:12px;color:var(--muted);text-align:right;min-width:0;background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line-soft);border-radius:99px;padding:4px 10px}
+.status{font-size:12px;color:var(--muted);text-align:right;min-width:0;background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line-soft);border-radius:99px;padding:4px 10px;white-space:nowrap;flex:none}
 .pagehead{margin:4px 0 16px}
 .pagehead.flex{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .eyebrow{margin:0 0 2px;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
@@ -169,7 +169,7 @@ p{margin:0}
 .chip{border:0;background:color-mix(in srgb,var(--sc) 13%,var(--surface));border-radius:20px;padding:12px 12px 10px;text-align:left;display:flex;flex-direction:column;gap:12px;min-width:0;min-height:96px;box-shadow:var(--sh)}
 .chip .plate{width:30px;height:30px}
 .chip .tk{color:var(--sc)}
-.chip .nm{font-family:var(--font-display);font-weight:800;font-size:23px;line-height:1;letter-spacing:.03em;text-transform:uppercase}
+.chip .nm{font-family:var(--font-display);font-weight:800;font-size:20px;line-height:1.02;letter-spacing:.03em;text-transform:uppercase;overflow-wrap:anywhere;hyphens:auto}
 .chip .sub{font-size:11.5px;color:var(--muted);min-height:15px;font-weight:600}
 .chip .top{display:flex;align-items:center;justify-content:space-between}
 .chip.on{background:var(--sc);color:var(--on-color)}
@@ -1496,8 +1496,8 @@ function vInicio(){
     h+='<section class="card hero"><h3>¿No sabes por dónde empezar?</h3><p class="meta">Dime tu objetivo y el tiempo que tienes, y te creo una rutina.</p><button class="btn" data-act="wz-open">Crear mi rutina</button></section>';
     }
   }
-  h+='<h2 class="h2">Ejercicios por zona</h2><div class="tiles">'+Object.keys(SUPER).map(function(g){
-    return '<button class="tile" data-act="home-grp" data-g="'+esc(g)+'"><span class="tf">'+(window.CF_TEC?CF_TEC.still(SUPER_PAT[g],1):'')+'</span><b>'+esc(g)+'</b><small>'+grpCount(g)+' ejercicios</small></button>';
+  h+='<h2 class="h2">Ejercicios por zona</h2><div class="zones">'+Object.keys(SUPER).map(function(g){
+    return '<button class="zone" data-act="home-grp" data-g="'+esc(g)+'"><span class="tf">'+(window.CF_TEC?CF_TEC.still(SUPER_PAT[g],1):'')+'</span><b>'+esc(g)+'</b><small>'+grpCount(g)+' ejercicios</small></button>';
   }).join('')+'</div>';
   h+='<h2 class="h2">Guía rápida para empezar</h2><details class="card rules"><summary>Qué significan las palabras del gimnasio</summary><dl class="glos">'
     +'<dt>Repetición y serie</dt><dd>Una repetición es un movimiento completo (bajar y subir). Una serie es un grupo de repeticiones seguidas, por ejemplo 10.</dd>'
