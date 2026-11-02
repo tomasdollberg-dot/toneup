@@ -36,3 +36,8 @@ En la versión de Claude, ve a **Progreso > Copia completa (JSON)** y guarda el 
 ## Evidencia
 
 El generador de planes usa reglas fijas. Cada regla indica su nivel de evidencia y enlaza a sus fuentes dentro de la pestaña **Plan**. Es un punto de partida, no consejo médico.
+
+## Novedades
+- Inicio con ejercicios por zona, figura animada y técnica para evitar lesiones.
+- Asistente de rutina por objetivo, días y tiempo.
+- Rutinas compartidas con amigos y "me gusta" (ejecuta supabase/rutinas.sql una vez).

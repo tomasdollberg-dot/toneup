@@ -49,6 +49,27 @@ img{max-width:100%}
 .rkname small{color:var(--muted);font-weight:500;font-size:12px}
 .amsg{font-size:14px;margin:0 0 12px;padding:10px 12px;border-radius:var(--r-sm);background:var(--raised)}
 .auth .pchips{margin-bottom:14px}
+
+/* inicio, técnica, asistente, rutinas */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.tile{border:1px solid var(--line-soft);background:var(--surface);box-shadow:var(--sh);border-radius:var(--r-lg);padding:8px 8px 12px;text-align:left;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile:hover{border-color:var(--line)}
+.tile .tf{background:var(--raised);border-radius:var(--r-md);height:92px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;overflow:hidden}
+.tile .tf svg{height:100%;width:auto;max-width:100%}
+.tile b{font-size:15px;padding:0 4px;overflow-wrap:anywhere}.tile small{color:var(--muted);font-size:12px;padding:0 4px}
+.h2{margin:22px 0 10px;font-family:'Big Shoulders Display',sans-serif;font-size:22px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.hero p{margin:4px 0 12px}.hero h3{margin:0}
+.tec{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin:10px 0}
+.tec svg.fig{width:200px;max-width:100%;height:auto;background:var(--raised);border-radius:var(--r-md);flex:none}
+.tec-b{flex:1;min-width:200px}.tec-b ol,.tec2 ul{margin:4px 0 0;padding-left:20px}.tec-b li,.tec2 li{margin:3px 0}
+.tec2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:6px}
+.tec2>div{background:var(--raised);border-radius:var(--r-md);padding:10px 12px}
+.tec2 .safe{border-left:4px solid var(--red)}
+.fig-cap{font-size:11.5px;color:var(--muted);margin:4px 0 0;width:200px;max-width:100%}
+.wz .gl{margin-top:12px}
+.rtc h3{margin:0 0 2px}.rtc .by{color:var(--muted);font-size:13px}
+.rtc ul{margin:6px 0;padding-left:18px}
+.glos dt{font-weight:700;margin-top:8px}.glos dd{margin:2px 0 0;color:var(--muted)}
 </style>
 <style>
 /* Concepto: cuaderno de gimnasio moderno. Superficies blancas redondeadas sobre fondo frío,
@@ -408,6 +429,8 @@ p{margin:0}
 <input type="file" id="impfile" accept=".json,application/json" hidden>
 
 <script src="config.js"></script>
+<script src="tecnica.js"></script>
+<script src="asistente.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script>
 (function(){
@@ -426,6 +449,7 @@ var ls={
 };
 var ic=function(p,s){s=s||20;return '<svg class="ic" width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';};
 var I={
+  inicio:'<path d="M4 11l8-7 8 7M6 10v10h12V10M10 20v-5h4v5"/>',
   hoy:'<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>',
   plan:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
   ex:'<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>',
@@ -628,9 +652,9 @@ var GOALS_DEF=[
 function defaultGoals(map){return GOALS_DEF.map(function(g){var o=JSON.parse(JSON.stringify(g));if(o.manual)o.done=!!map[o.id];return o;});}
 
 /* ---------- estado ---------- */
-var S={tab:'hoy',cfg:normCfg({}),timer:null,freeSec:90,sessions:[],draft:null,mode:'init',cfgReady:false,sessReady:false,slow:false,
+var S={wz:null,openRt:null,tab:'inicio',cfg:normCfg({}),timer:null,freeSec:90,sessions:[],draft:null,mode:'init',cfgReady:false,sessReady:false,slow:false,
   q:'',pq:'',grp:'Todos',eq:'Todos',openEx:null,newEx:false,edit:false,picker:null,summary:null,pendingSwitch:null,armed:null,armT:null,progEx:null,openHist:null,dirty:false,gen:null,gform:null,goalEdit:false,whyOpen:null,soc:null,authMode:'in',authMsg:''};
-S.soc={loaded:false,loading:false,err:'',sub:'feed',rk:'vol',friends:[],inc:[],out:[],profiles:{},feed:[],kudos:{},comments:{},openC:null,q:'',results:null};
+S.soc={routines:[],rlikes:{},rtOk:false,loaded:false,loading:false,err:'',sub:'feed',rk:'vol',friends:[],inc:[],out:[],profiles:{},feed:[],kudos:{},comments:{},openC:null,q:'',results:null};
 var EX=new Map();
 var dlNs=null,rest=null,actx=null;
 
@@ -814,6 +838,14 @@ async function loadSocial(){
     q[0].data.forEach(function(r){ids[r.user_id]=1;});
     q[1].data.forEach(function(k){ids[k.user_id]=1;});
     q[2].data.forEach(function(c){ids[c.user_id]=1;});
+    try{
+      var rr=await sb.from('shared_routines').select('id,owner,name,note,data,created_at').order('created_at',{ascending:false}).limit(100);
+      var lk=await sb.from('routine_likes').select('routine_id,user_id').limit(5000);
+      if(rr.error||lk.error)throw (rr.error||lk.error);
+      soc.routines=rr.data;rr.data.forEach(function(x){ids[x.owner]=1;});
+      soc.rlikes={};lk.data.forEach(function(l){(soc.rlikes[l.routine_id]=soc.rlikes[l.routine_id]||[]).push(l.user_id);});
+      soc.rtOk=true;
+    }catch(e2){soc.rtOk=false;soc.routines=[];soc.rlikes={};}
     var pr=await sb.from('profiles').select('id,username,display_name').in('id',Object.keys(ids));if(pr.error)throw pr.error;
     soc.profiles={};pr.data.forEach(function(p){soc.profiles[p.id]=p;});
     soc.friends=acc;soc.inc=inc;soc.out=out;
@@ -827,6 +859,28 @@ async function loadSocial(){
 function feedItems(){
   var mine=S.sessions.map(function(s){return {o:me.id,id:s.id,date:s.date,d:s,mine:true};});
   return mine.concat(S.soc.feed).sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0;});
+}
+function rtSummary(d){var ss=(d&&d.sessions)||[],n=0;ss.forEach(function(x){n+=(x.items||[]).length;});return ss.length+' sesiones · '+n+' ejercicios';}
+function rtHTML(){
+  var soc=S.soc,h='';
+  if(!soc.rtOk)return '<div class="card empty">Las rutinas compartidas todavía no están activadas en el servidor.</div>';
+  h+='<p class="meta">Aquí ves las rutinas que comparten tus amigos y las tuyas. Dale a «me gusta» o cópiala a tus planes.</p>';
+  if(!soc.routines.length)return h+'<div class="card empty">Aún no hay rutinas compartidas. Ve a Plan y pulsa «Compartir con amigos» en la tuya.</div>';
+  soc.routines.forEach(function(r){
+    var d=r.data||{},mine=r.owner===me.id,ls=soc.rlikes[r.id]||[],iL=ls.indexOf(me.id)>=0,open=S.openRt===r.id,cn={};
+    (d.custom||[]).forEach(function(e){if(e&&e.id)cn[e.id]=e.name;});
+    h+='<article class="card rtc"><div class="fh">'+avatarHTML(mine?prof:pOf(r.owner))+'<div class="fn"><b>'+esc(mine?'Tú':pName(r.owner))+'</b><span>'+esc(dateShort(r.created_at))+'</span></div></div>';
+    h+='<h3>'+esc(r.name)+'</h3><p class="meta">'+esc(rtSummary(d))+'</p>'+(r.note?'<p class="meta">'+esc(r.note)+'</p>':'');
+    if(open){
+      (d.sessions||[]).forEach(function(s){
+        h+='<p style="margin:8px 0 0"><b>'+esc(s.name||'Sesión')+'</b></p><ul>'+(s.items||[]).map(function(it){var ex=EX.get(it.id);return '<li>'+esc(ex?ex.name:(cn[it.id]||'Ejercicio'))+' · '+esc(it.sets)+' × '+esc(it.reps||'–')+'</li>';}).join('')+'</ul>';
+      });
+    }
+    h+='<div class="fa"><button class="kb'+(iL?' on':'')+'" data-act="rt-like" data-id="'+esc(r.id)+'" aria-pressed="'+iL+'" aria-label="Me gusta">'+ic('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.600-7 10-7 10z"/>',18)+'<span>'+(ls.length||'')+'</span></button>'
+      +'<button class="btn sm" data-act="rt-open" data-id="'+esc(r.id)+'">'+(open?'Ocultar':'Ver ejercicios')+'</button>'
+      +(mine?'<button class="btn sm" data-act="rt-unshare" data-id="'+esc(r.id)+'">Dejar de compartir</button>':'<button class="btn sm primary" data-act="rt-copy" data-id="'+esc(r.id)+'">Copiar a mis planes</button>')+'</div></article>';
+  });
+  return h;
 }
 function feedCard(it){
   var soc=S.soc,key=it.o+'|'+it.id,d=it.d,p=it.mine?prof:pOf(it.o),ks=soc.kudos[key]||[],cm=soc.comments[key]||[],iK=ks.indexOf(me.id)>=0,open=soc.openC===key;
@@ -889,13 +943,14 @@ function vSoc(){
   if(S.mode!=='db'){
     return h+'<div class="card"><p>Para ver a tus amigos, compartir sesiones y entrar en el ranking necesitas una cuenta.</p>'+(hasBackend()?'<p style="margin-top:10px"><button class="btn primary" data-act="au-open">Iniciar sesión</button></p>':'<p class="meta">Esta copia de la app todavía no está conectada a un servidor, así que solo guarda tus datos en este dispositivo. El README explica cómo conectarla.</p>')+'</div>';
   }
-  var soc=S.soc,subs=[['feed','Actividad'],['rank','Ranking'],['fr','Amigos'+(soc.inc.length?' ('+soc.inc.length+')':'')],['me','Perfil']];
+  var soc=S.soc,subs=[['feed','Actividad'],['rt','Rutinas'],['rank','Ranking'],['fr','Amigos'+(soc.inc.length?' ('+soc.inc.length+')':'')],['me','Perfil']];
   h+='<div class="pchips">'+subs.map(function(o){return '<button class="gc'+(soc.sub===o[0]?' on':'')+'" data-act="soc-sub" data-v="'+o[0]+'">'+o[1]+'</button>';}).join('')+'<button class="gc add" data-act="soc-refresh">'+(soc.loading?'Actualizando…':'Actualizar')+'</button></div>';
   if(soc.err)h+='<div class="alert"><span>'+esc(soc.err)+'</span></div>';
   if(soc.sub==='feed'){
     var items=feedItems().slice(0,40);
     h+=items.length?items.map(feedCard).join(''):'<div class="card empty">Todavía no hay actividad. Termina una sesión o añade amigos para llenar esto.</div>';
-  }else if(soc.sub==='rank')h+=rankHTML();
+  }else if(soc.sub==='rt')h+=rtHTML();
+  else if(soc.sub==='rank')h+=rankHTML();
   else if(soc.sub==='fr')h+=friendsHTML();
   else h+=profileHTML();
   return h;
@@ -1009,10 +1064,16 @@ function render(force){
   S.dirty=false;
   if(S.mode==='auth'||(S.mode==='db'&&!prof&&S.cfgReady)){VIEW.innerHTML=S.mode==='auth'?vAuth():vOnboard();document.body.className='';$('#nav').innerHTML='';return;}
   if(S.mode==='init'){VIEW.innerHTML='<div class="card empty">Conectando…</div>';$('#nav').innerHTML='';return;}
-  var fn={hoy:vHoy,plan:vPlan,ex:vEx,prog:vProg,soc:vSoc,metas:vMetas}[S.tab]||vHoy;
+  var fn={inicio:vInicio,hoy:vHoy,plan:vPlan,ex:vEx,prog:vProg,soc:vSoc,metas:vMetas}[S.tab]||vHoy;
   VIEW.innerHTML=fn();
   document.body.className=(S.tab==='hoy'&&S.draft&&S.draft.kind)?'t-'+S.draft.kind:'';
   renderNav();
+  afterRender();
+}
+function afterRender(){
+  if(!window.CF_TEC)return;
+  window.CF_TEC.stop();
+  var f=VIEW.querySelector('.tec svg.fig');if(f)window.CF_TEC.start(f);
 }
 function countSets(d){var tot=0,dn=0;d.items.forEach(function(it){it.sets.forEach(function(s){if(!s.w){tot++;if(s.done)dn++;}});});return {tot:tot,dn:dn};}
 function updateProgressHead(){
@@ -1028,8 +1089,8 @@ function ringHTML(rt,wk){
   return s+'<text class="ring-t" x="32" y="37" text-anchor="middle">'+wk.size+'/'+n+'</text></svg>';
 }
 function renderNav(){
-  var T=[['hoy','Entrenar'],['plan','Plan'],['ex','Ejercicios'],['prog','Progreso'],['soc','Amigos'],['metas','Metas']];
-  $('#nav').innerHTML=T.map(function(t){return '<button class="tab" data-act="tab" data-t="'+t[0]+'"'+(S.tab===t[0]?' aria-current="page"':'')+'>'+ic(I[t[0]],22)+'<span>'+t[1]+'</span></button>';}).join('');
+  var T=[['inicio','Inicio'],['hoy','Entrenar'],['plan','Plan'],['prog','Progreso'],['soc','Amigos'],['metas','Metas']];
+  $('#nav').innerHTML=T.map(function(t){return '<button class="tab" data-act="tab" data-t="'+t[0]+'"'+((S.tab===t[0]||(t[0]==='inicio'&&S.tab==='ex'))?' aria-current="page"':'')+'>'+ic(I[t[0]],22)+'<span>'+t[1]+'</span></button>';}).join('');
 }
 function renderStatus(){
   var el=$('#status');
@@ -1320,6 +1381,7 @@ function vPlan(){
     +'<button class="btn sm'+(S.edit?' primary':'')+'" data-act="plan-edit">'+(S.edit?'Terminar edición':'Editar plan')+'</button>'
     +(S.edit?'<button class="btn sm" data-act="plan-rename">Guardar nombre</button>':'')
     +'<button class="btn sm" data-act="plan-dup">Duplicar</button>'
+    +(S.mode==='db'&&S.soc.rtOk!==false?'<button class="btn sm" data-act="rt-share">'+(S.soc.routines.some(function(r){return me&&r.owner===me.id&&r.data&&r.data.pid===pl.id;})?'Actualizar rutina compartida':'Compartir con amigos')+'</button>':'')
     +(S.edit&&pl.id==='base'?cbtn('reset-plan','Restaurar original','btn sm','data-act="plan-reset"'):'')
     +(S.edit&&plans.length>1?cbtn('del-plan','Eliminar plan','btn sm','data-act="plan-del"'):'')
     +'</div></div>';
@@ -1351,7 +1413,7 @@ function vPlan(){
 
 function matchEx(e){
   var q=S.q.trim().toLowerCase();
-  if(S.grp!=='Todos'&&e.grp!==S.grp)return false;
+  if(!inGrp(e.grp,S.grp))return false;
   if(S.eq!=='Todos'&&e.eq!==S.eq)return false;
   if(q){var hay=(e.name+' '+e.grp+' '+e.eq+' '+(e.sec||'')+' '+(e.alias||'')).toLowerCase();return q.split(/\s+/).every(function(w){return hay.indexOf(w)>=0;});}
   return true;
@@ -1373,7 +1435,14 @@ function exListHTML(){
 }
 function exDetail(e){
   var hist=histFor(e.id),bw=isBW(e),h='<div class="exd">';
-  if(e.cue)h+='<p>'+esc(e.cue)+'</p>';
+  var pk=window.CF_TEC&&CF_TEC.patOf(e),ti=pk&&CF_TEC.info(pk);
+  if(e.cue)h+='<p><b>Consejo:</b> '+esc(e.cue)+'</p>';
+  if(ti){
+    var fg=CF_TEC.figure(pk);
+    h+='<div class="tec">'+(fg?'<div>'+fg+'<p class="fig-cap">Dibujo esquemático del movimiento. La postura exacta cambia un poco según la máquina.</p></div>':'')+'<div class="tec-b"><b>Cómo hacerlo</b><ol>'+ti.steps.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol></div></div>'
+      +'<div class="tec2"><div><b>Errores típicos</b><ul>'+ti.err.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div><div class="safe"><b>Para evitar lesiones</b><ul>'+ti.safe.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div></div>'
+      +'<p class="meta">La primera vez usa un peso ligero para aprender el gesto. Si notas dolor punzante o en una articulación, para y consulta con un profesional.</p>';
+  }
   if(e.sec)h+='<p class="meta">También trabaja: '+esc(e.sec)+'</p>';
   if(hist.length){
     var bestS=null,bestV=-1;
@@ -1387,10 +1456,55 @@ function exDetail(e){
   if(e.custom)h+='<div class="acts">'+cbtn('delex:'+e.id,'Eliminar ejercicio propio','mini','data-act="ex-del-custom" data-id="'+esc(e.id)+'"')+'</div>';
   return h+'</div>';
 }
+var SUPER={'Piernas':['Cuádriceps','Isquios','Glúteos','Gemelos','Abductores','Aductores'],'Glúteos':['Glúteos'],'Pecho':['Pecho'],'Espalda':['Espalda','Trapecio','Lumbar'],'Hombros':['Hombros'],'Brazos':['Bíceps','Tríceps','Antebrazo'],'Core':['Core'],'Calistenia':['Calistenia']};
+var SUPER_PAT={'Piernas':'sentadilla','Glúteos':'puente','Pecho':'press','Espalda':'dominada','Hombros':'pressh','Brazos':'curl','Core':'plancha','Calistenia':'fondos'};
+function inGrp(g,sg){return !sg||sg==='Todos'||(SUPER[sg]?SUPER[sg].indexOf(g)>=0:g===sg);}
+function grpCount(sg){var n=0;EX.forEach(function(e){if(inGrp(e.grp,sg))n++;});return n;}
+function wzDefault(){return {goal:'musculo',days:3,mins:60,equip:'gym',level:'nuevo',back:false,knees:false,shoulders:false};}
+function wzHTML(){
+  var A=window.CF_ASIS,w=S.wz;
+  function ch(label,on,k,v){return '<button class="gc'+(on?' on':'')+'" data-act="wz-set" data-k="'+k+'" data-v="'+v+'">'+label+'</button>';}
+  function tg(label,k){return '<button class="gc'+(w[k]?' on':'')+'" data-act="wz-tog" data-k="'+k+'" aria-pressed="'+!!w[k]+'">'+label+'</button>';}
+  var h='<div class="card wz"><h3>Crea tu rutina</h3><p class="meta">Responde cuatro cosas y te armo un plan. Puedes cambiarlo después y no borra lo que ya tienes.</p>';
+  h+='<div class="gl">¿Qué quieres conseguir?</div><div class="pchips">'+Object.keys(A.GOALS).map(function(k){return ch(A.GOALS[k],w.goal===k,'goal',k);}).join('')+'</div><p class="meta">'+esc(A.GOAL_HELP[w.goal])+'</p>';
+  h+='<div class="gl">¿Cuántos días por semana puedes entrenar?</div><div class="pchips">'+[2,3,4,5].map(function(d){return ch(d+' días',w.days===d,'days',d);}).join('')+'</div><p class="meta">Si dudas, elige 3: es lo más fácil de mantener.</p>';
+  h+='<div class="gl">¿Cuánto tiempo tienes cada día?</div><div class="pchips">'+[30,45,60,90].map(function(m){return ch(m+' min',w.mins===m,'mins',m);}).join('')+'</div>';
+  h+='<div class="gl">¿Dónde vas a entrenar?</div><div class="pchips">'+Object.keys(A.EQUIP).map(function(k){return ch(A.EQUIP[k],w.equip===k,'equip',k);}).join('')+'</div>';
+  h+='<div class="gl">¿Cuánta experiencia tienes?</div><div class="pchips">'+Object.keys(A.LEVEL).map(function(k){return ch(A.LEVEL[k],w.level===k,'level',k);}).join('')+'</div>';
+  h+='<div class="gl">¿Quieres cuidar alguna zona? (opcional)</div><div class="pchips">'+tg('Espalda baja','back')+tg('Rodillas','knees')+tg('Hombros','shoulders')+'</div><p class="meta">Evito los ejercicios que más suelen molestar en esa zona. Si tienes una lesión, consulta con un profesional.</p>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn primary" data-act="wz-make">Crear mi rutina</button><button class="btn" data-act="wz-cancel">Cancelar</button></div></div>';
+  return h;
+}
+function vInicio(){
+  var rt=routine(),sug=nextKey(),nm=prof&&(prof.display_name||prof.username);
+  var h='<div class="pagehead"><p class="eyebrow">'+esc(nm?'Hola, '+nm:dateLong())+'</p><h1>Inicio</h1></div>';
+  if(S.wz)h+=wzHTML();
+  else{
+    var next=rt.find(function(r){return r.key===sug;})||rt[0];
+    h+='<section class="card hero">';
+    if(S.draft)h+='<h3>Tienes una sesión en curso</h3><p class="meta">'+esc(S.draft.name||'')+'</p><button class="btn primary" data-act="tab" data-t="hoy">Continuar</button>';
+    else if(next)h+='<h3>Hoy te toca: '+esc(next.name)+'</h3><p class="meta">'+esc(next.focus||'')+'</p><button class="btn primary" data-act="start-plan" data-k="'+esc(next.key)+'">Empezar sesión</button>';
+    h+='</section>';
+    h+='<section class="card hero"><h3>¿No sabes por dónde empezar?</h3><p class="meta">Dime tu objetivo y el tiempo que tienes, y te creo una rutina.</p><button class="btn" data-act="wz-open">Crear mi rutina</button></section>';
+  }
+  h+='<h2 class="h2">Ejercicios por zona</h2><div class="tiles">'+Object.keys(SUPER).map(function(g){
+    return '<button class="tile" data-act="home-grp" data-g="'+esc(g)+'"><span class="tf">'+(window.CF_TEC?CF_TEC.still(SUPER_PAT[g],1):'')+'</span><b>'+esc(g)+'</b><small>'+grpCount(g)+' ejercicios</small></button>';
+  }).join('')+'</div>';
+  h+='<h2 class="h2">Guía rápida para empezar</h2><details class="card rules"><summary>Qué significan las palabras del gimnasio</summary><dl class="glos">'
+    +'<dt>Repetición y serie</dt><dd>Una repetición es un movimiento completo (bajar y subir). Una serie es un grupo de repeticiones seguidas, por ejemplo 10.</dd>'
+    +'<dt>Repeticiones en reserva</dt><dd>Cuántas más podrías hacer al terminar la serie. Lo ideal es terminar con 1 a 3 en reserva: cansado, pero con buena técnica.</dd>'
+    +'<dt>Calentamiento</dt><dd>5 minutos de bici o caminar a paso ligero, y 1–2 series ligeras del primer ejercicio.</dd>'
+    +'<dt>Descanso entre series</dt><dd>1–2 minutos en ejercicios pequeños y 2–3 minutos en los grandes. La app tiene un temporizador.</dd>'
+    +'<dt>Progresión</dt><dd>Cuando hagas todas las repeticiones con buena técnica, sube un poco el peso la próxima vez.</dd>'
+    +'<dt>Agujetas o dolor</dt><dd>Las agujetas son una molestia muscular repartida que dura 1–3 días y es normal. Un dolor punzante o en una articulación no lo es: para y consulta con un profesional.</dd>'
+    +'<dt>Constancia</dt><dd>Entrenar 2–3 veces por semana durante meses funciona mejor que hacerlo cinco días y dejarlo.</dd>'
+    +'</dl><p class="meta">Esta información es general y no sustituye el consejo de un médico o de un entrenador.</p></details>';
+  return h;
+}
 function vEx(){
-  var h='<div class="pagehead"><p class="eyebrow">'+EX.size+' ejercicios de gimnasio</p><h1>Ejercicios</h1></div>';
+  var h='<p><button class="btn sm" data-act="tab" data-t="inicio">← Inicio</button></p><div class="pagehead"><p class="eyebrow">'+EX.size+' ejercicios de gimnasio</p><h1>Ejercicios</h1></div>';
   h+='<div class="search"><input id="q" type="search" placeholder="Buscar: press, remo, glúteo…" value="'+esc(S.q)+'" autocomplete="off" aria-label="Buscar ejercicio"></div>';
-  h+='<div class="gchips">'+['Todos'].concat(GROUPS).map(function(g){return '<button class="gc'+(S.grp===g?' on':'')+'" data-act="grp" data-g="'+esc(g)+'">'+esc(g)+'</button>';}).join('')+'</div>';
+  h+='<div class="gchips">'+['Todos'].concat(Object.keys(SUPER)).map(function(g){return '<button class="gc'+(S.grp===g?' on':'')+'" data-act="grp" data-g="'+esc(g)+'">'+esc(g)+'</button>';}).join('')+'</div>';
   h+='<div class="filters"><label class="sel">Equipo<select data-sel="eq">'+['Todos'].concat(EQS).map(function(e){return '<option'+(S.eq===e?' selected':'')+'>'+esc(e)+'</option>';}).join('')+'</select></label><button class="btn sm" data-act="ex-new">'+ic(I.plus,16)+'Nuevo ejercicio</button></div>';
   if(S.newEx){
     h+='<div class="card" style="margin-bottom:12px"><div class="form"><label class="field wide">Nombre<input id="nx-name" type="text" placeholder="Ej.: Press de hombro con mancuernas sentado" autocomplete="off"></label>'
@@ -1657,7 +1771,7 @@ var ACT={
   'r-plus':function(b){editRoutine(function(rt){var it=rt.find(function(x){return x.key===b.dataset.k;}).items[+b.dataset.i];if(it.sets<8)it.sets++;});},
   'r-del':function(b){editRoutine(function(rt){rt.find(function(x){return x.key===b.dataset.k;}).items.splice(+b.dataset.i,1);});},
   grp:function(b){S.grp=b.dataset.g;render(true);},
-  'ex-open':function(b){S.openEx=S.openEx===b.dataset.id?null:b.dataset.id;$('#exlist').innerHTML=exListHTML();},
+  'ex-open':function(b){S.openEx=S.openEx===b.dataset.id?null:b.dataset.id;$('#exlist').innerHTML=exListHTML();afterRender();},
   'ex-new':function(){S.newEx=!S.newEx;render(true);},
   'ex-save-new':function(){
     if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
@@ -1783,6 +1897,53 @@ var ACT={
     if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
     var p=genPlan(S.gen);S.cfg.plans.push(p);S.cfg.activePlan=p.id;S.whyOpen=p.id;S.gen=null;S.edit=false;
     saveCfg();render(true);window.scrollTo(0,0);toast('Plan creado y activado.');
+  },
+  'home-grp':function(b){S.grp=b.dataset.g;S.q='';S.eq='Todos';S.openEx=null;S.tab='ex';render(true);window.scrollTo(0,0);},
+  'wz-open':function(){S.wz=wzDefault();render(true);},
+  'wz-cancel':function(){S.wz=null;render(true);},
+  'wz-set':function(b){var k=b.dataset.k,v=b.dataset.v;S.wz[k]=(k==='days'||k==='mins')?parseInt(v,10):v;render(true);},
+  'wz-tog':function(b){S.wz[b.dataset.k]=!S.wz[b.dataset.k];render(true);},
+  'wz-make':function(){
+    if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
+    var r=CF_ASIS.build(S.wz,{exOf:exOf,has:function(id){return EX.has(id);}});
+    S.cfg.plans.push(r.plan);S.cfg.activePlan=r.plan.id;S.whyOpen=r.plan.id;S.wz=null;S.edit=false;S.tab='plan';
+    saveCfg();render(true);window.scrollTo(0,0);toast('Rutina creada y activada.');
+  },
+  'rt-open':function(b){S.openRt=S.openRt===b.dataset.id?null:b.dataset.id;render(true);},
+  'rt-share':async function(){
+    if(S.mode!=='db'||!S.cfgReady){toast('Inicia sesión para compartir.');return;}
+    var pl=activePlan(),ids={};
+    var sess=pl.sessions.map(function(s){return {name:s.name,kind:s.kind,focus:s.focus||'',items:s.items.map(function(it){ids[it.id]=1;return {id:it.id,sets:it.sets,reps:it.reps||'',note:it.note||''};})};});
+    var custom=(S.cfg.custom||[]).filter(function(e){return ids[e.id];}).map(function(e){return {id:e.id,name:e.name,grp:e.grp,eq:e.eq,t:e.t};});
+    var ex=S.soc.routines.find(function(r){return r.owner===me.id&&r.data&&r.data.pid===pl.id;});
+    var row={owner:me.id,name:String(pl.name).slice(0,80),note:String(pl.note||'').slice(0,500),data:{pid:pl.id,sessions:sess,custom:custom}};
+    var r=ex?await sb.from('shared_routines').update(row).eq('id',ex.id).select('id,owner,name,note,data,created_at').single():await sb.from('shared_routines').insert(row).select('id,owner,name,note,data,created_at').single();
+    if(r.error){toast('No se pudo compartir la rutina.');return;}
+    var i=S.soc.routines.findIndex(function(x){return x.id===r.data.id;});
+    if(i>=0)S.soc.routines[i]=r.data;else S.soc.routines.unshift(r.data);
+    S.soc.rtOk=true;S.soc.sub='rt';S.tab='soc';render(true);window.scrollTo(0,0);toast('Rutina compartida con tus amigos.');
+  },
+  'rt-unshare':async function(b){
+    var id=b.dataset.id,r=await sb.from('shared_routines').delete().eq('id',id);
+    if(r.error){toast('No se pudo dejar de compartir.');return;}
+    S.soc.routines=S.soc.routines.filter(function(x){return x.id!==id;});render(true);toast('Ya no se comparte.');
+  },
+  'rt-like':async function(b){
+    var id=b.dataset.id,arr=S.soc.rlikes[id]=S.soc.rlikes[id]||[],i=arr.indexOf(me.id);
+    if(i>=0){arr.splice(i,1);render(true);var r=await sb.from('routine_likes').delete().eq('routine_id',id).eq('user_id',me.id);if(r.error){arr.push(me.id);render(true);toast('No se pudo quitar el me gusta.');}}
+    else{arr.push(me.id);render(true);var r2=await sb.from('routine_likes').insert({routine_id:id,user_id:me.id});if(r2.error){arr.splice(arr.indexOf(me.id),1);render(true);toast('No se pudo dar me gusta.');}}
+  },
+  'rt-copy':function(b){
+    if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
+    var r=S.soc.routines.find(function(x){return x.id===b.dataset.id;});if(!r)return;
+    var d=r.data||{},pid='c'+Date.now().toString(36);
+    (d.custom||[]).forEach(function(e){if(e&&e.id&&e.name&&!EX.has(e.id)){S.cfg.custom.push({id:String(e.id).slice(0,40),name:String(e.name).slice(0,80),grp:GROUPS.indexOf(e.grp)>=0?e.grp:'Otros',eq:EQS.indexOf(e.eq)>=0?e.eq:'Peso corporal',t:e.t==='C'?'C':'A',sec:'',cue:'',alias:'',custom:true});}});
+    rebuildEx();
+    var sess=(d.sessions||[]).map(function(s,i){return {key:pid+'-'+(i+1),name:String(s.name||'Sesión').slice(0,60),kind:['push','pull','piernas'].indexOf(s.kind)>=0?s.kind:'push',focus:String(s.focus||'').slice(0,120),items:(s.items||[]).filter(function(it){return it&&EX.has(it.id);}).map(function(it){return {id:it.id,sets:Math.max(1,Math.min(10,parseInt(it.sets,10)||3)),reps:String(it.reps||'').slice(0,12),last:null,note:String(it.note||'').slice(0,200)};})};}).filter(function(s){return s.items.length;});
+    if(!sess.length){toast('Esta rutina no se puede copiar.');return;}
+    var nm=(r.name+' (de '+pName(r.owner)+')').slice(0,80);
+    S.cfg.plans.push({id:pid,name:nm,note:'Rutina de '+pName(r.owner)+'. '+String(r.note||'').slice(0,300),sessions:sess,created:new Date().toISOString()});
+    S.cfg.activePlan=pid;S.edit=false;S.tab='plan';saveCfg();render(true);window.scrollTo(0,0);toast('Copiada a tus planes y activada.');
   },
   'g-to-plan':function(){S.tab='plan';S.gen=defaultGen();render(true);window.scrollTo(0,0);},
   'g-new':function(){S.gform={id:null,stage:String(goalStages()[0]||1),t:'e1rm',ex:goalDefEx('e1rm'),target:'',mult:'',lo:'',hi:'',label:'',newTitle:''};render(true);window.scrollTo(0,0);},
