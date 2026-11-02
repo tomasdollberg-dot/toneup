@@ -924,7 +924,7 @@ async function loadSocial(){
     soc.comments={};q[2].data.forEach(function(c){var key=c.owner_id+'|'+c.session_id;(soc.comments[key]=soc.comments[key]||[]).push(c);});
     soc.loaded=true;
   }catch(e){soc.err='No se pudo cargar la parte social. Pulsa «Actualizar» para reintentar.';}
-  soc.loading=false;if(S.tab==='soc')render(true);
+  soc.loading=false;if(S.tab==='soc'||S.tab==='inicio'){var ae=document.activeElement;if(ae&&/INPUT|TEXTAREA/.test(ae.tagName))renderNav();else render(true);}else renderNav();
 }
 function feedItems(){
   var mine=S.sessions.map(function(s){return {o:me.id,id:s.id,date:s.date,d:s,mine:true};});
