@@ -263,7 +263,16 @@ p{margin:0}
 .prow .pl{font-family:var(--font-num);font-size:12.5px;color:var(--muted);white-space:nowrap}
 .prow .ps{font-family:var(--font-num);font-size:13px;color:var(--muted);white-space:nowrap}
 .pctl{display:flex;align-items:center;gap:0;flex:none}
-.pctl .ico{width:32px;height:32px}
+.pctl .ico{width:44px;height:44px}
+.prow.ed{flex-direction:column;align-items:stretch;gap:4px}
+.prow.ed .pctl{justify-content:space-between}
+.rpin{width:84px;height:44px;border:1.5px solid transparent;background:var(--raised);border-radius:14px;text-align:center;font-family:var(--font-num);font-size:16px;min-width:0}
+.sname{flex:1;min-width:0;height:44px;border:1.5px solid transparent;background:var(--raised);border-radius:14px;padding:0 12px;font-family:var(--font-display);font-size:20px;font-weight:800;text-transform:uppercase}
+.sname:focus,.rpin:focus{outline:0;border-color:var(--sc,var(--ink))}
+.fin{position:sticky;bottom:92px;z-index:5;padding:14px 0 4px;background:linear-gradient(to bottom,transparent,var(--bg) 35%)}
+.btn.sm{min-height:40px}
+.mini{min-height:40px}
+.gc{min-height:40px}
 .focus{font-size:13px;color:var(--muted);margin:0 0 6px}
 
 /* ejercicios */
@@ -1147,7 +1156,7 @@ function vHoy(){
     +'<label class="chk"><input type="checkbox" data-w="abs"'+(d.warm.abs?' checked':'')+'><span>Abdomen, incorporado de forma progresiva</span></label></div>';
   d.items.forEach(function(it,i){h+=exHTML(it,i,d);});
   h+='<button class="btn block" data-act="open-picker" data-mode="draft">'+ic(I.plus,18)+'Añadir ejercicio</button>';
-  h+='<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn sc" style="flex:1;min-width:180px" data-act="finish">Terminar sesión</button>'+cbtn('discard','Descartar','btn','data-act="discard"')+'</div>';
+  h+='<div class="fin" style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn sc" style="flex:1;min-width:180px;min-height:54px;font-size:16px" data-act="finish">Terminar sesión</button>'+cbtn('discard','Descartar','btn','data-act="discard"')+'</div>';
   h+='</div>';
   return h;
 }
@@ -1400,14 +1409,15 @@ function vPlan(){
   h+='<details class="card rules"><summary>Evidencia y fuentes de las reglas</summary><ul class="evl">'+EVID.map(function(e){return evHTML(e);}).join('')+'</ul><p class="meta">La evidencia describe promedios de grupos, no a una persona. Muchos estudios son pequeños o de calidad variable. Esto no sustituye el consejo de un profesional sanitario si tienes dolor o una lesión.</p></details>';
   h+='<details class="card rules"><summary>Reglas de tu rutina</summary><ul>'+RULES.map(function(r){return '<li>'+esc(r)+'</li>';}).join('')+'</ul></details>';
   rt.forEach(function(r){
-    h+='<section class="card k-'+r.kind+'"><div class="s-h"><span class="plate"></span><span class="nm">'+esc(r.name)+'</span>'+(S.edit?'':'<button class="btn sm sc go" data-act="start-plan" data-k="'+esc(r.key)+'">Entrenar</button>')+'</div><p class="focus">'+esc(r.focus||'')+'</p>';
+    h+='<section class="card k-'+r.kind+'"><div class="s-h"><span class="plate"></span>'+(S.edit?'<input class="sname" type="text" maxlength="40" data-sn="'+esc(r.key)+'" value="'+esc(r.name)+'" aria-label="Nombre de la sesión" autocomplete="off">'+cbtn('sd:'+r.key,'Eliminar','btn sm','data-act="s-del" data-k="'+esc(r.key)+'"'):'<span class="nm">'+esc(r.name)+'</span><button class="btn sm sc go" data-act="start-plan" data-k="'+esc(r.key)+'">Entrenar</button>')+'</div><p class="focus">'+esc(r.focus||'')+'</p>';
     r.items.forEach(function(it,i){
       var ex=exOf(it.id),last=it.last;
       var lastTxt=last?fmtSet(ex,last):'sin carga previa';
-      h+='<div class="prow"><div class="pn">'+esc(ex.name)+(it.note&&!S.edit?'<div class="meta">'+esc(it.note)+'</div>':'')+'</div>';
+      h+='<div class="prow'+(S.edit?' ed':'')+'"><div class="pn">'+esc(ex.name)+(it.note&&!S.edit?'<div class="meta">'+esc(it.note)+'</div>':'')+'</div>';
       if(S.edit){
         h+='<div class="pctl"><button class="ico" data-act="r-up" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Subir">'+ic(I.up,16)+'</button><button class="ico" data-act="r-down" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Bajar">'+ic(I.down,16)+'</button>'
           +'<button class="ico" data-act="r-minus" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Menos series">'+ic(I.minus,16)+'</button><span class="ps">'+it.sets+'×</span><button class="ico" data-act="r-plus" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Más series">'+ic(I.plus,16)+'</button>'
+          +'<input class="rpin" type="text" maxlength="12" inputmode="text" data-rp="'+esc(r.key)+'|'+i+'" value="'+esc(it.reps||'')+'" placeholder="reps" aria-label="Repeticiones">'
           +'<button class="ico" data-act="r-del" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Quitar del plan">'+ic(I.x,16)+'</button></div>';
       }else{
         h+='<div style="text-align:right"><div class="ps">'+it.sets+' series'+(it.reps?' · '+esc(it.reps)+(/s$/.test(it.reps)?'':' reps'):'')+'</div><div class="pl">'+esc(lastTxt)+'</div></div>';
@@ -1417,6 +1427,7 @@ function vPlan(){
     if(S.edit)h+='<div style="margin-top:8px"><button class="btn sm" data-act="open-picker" data-mode="plan" data-k="'+esc(r.key)+'">'+ic(I.plus,16)+'Añadir ejercicio</button></div>';
     h+='</section>';
   });
+  if(S.edit)h+='<button class="btn block" data-act="sess-new">'+ic(I.plus,18)+'Añadir sesión</button>';
   h+='<p class="meta" style="margin-top:12px">Las cargas que ves son la última referencia de cada ejercicio (o una carga orientativa calculada con tu historial en los planes generados) hasta que registres sesiones nuevas.</p>';
   return h;
 }
@@ -1912,6 +1923,11 @@ var ACT={
   },
   'home-grp':function(b){S.grp=b.dataset.g;S.q='';S.eq='Todos';S.openEx=null;S.tab='ex';render(true);window.scrollTo(0,0);},
   'wz-open':function(){S.wz=wzDefault();render(true);},
+  's-del':function(b){
+    if(!canEditCfg())return;var pl=activePlan();
+    if(pl.sessions.length<2){toast('Un plan necesita al menos una sesión. Puedes borrar el plan entero.');return;}
+    pl.sessions=pl.sessions.filter(function(x){return x.key!==b.dataset.k;});saveCfg();render(true);toast('Sesión eliminada. Tu historial se conserva.');
+  },
   'sess-new':function(){
     if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
     var rt=routine(),n=rt.length+1;
@@ -2038,6 +2054,8 @@ document.addEventListener('change',function(e){
     else if(t.dataset.gf==='stage')render(true);
     return;
   }
+  if(t.dataset&&t.dataset.sn){if(canEditCfg()){var ss=routine().find(function(x){return x.key===t.dataset.sn;});if(ss){ss.name=t.value.trim().slice(0,40)||ss.name;saveCfg();}}return;}
+  if(t.dataset&&t.dataset.rp){if(canEditCfg()){var kp=t.dataset.rp.split('|'),sr=routine().find(function(x){return x.key===kp[0];});if(sr&&sr.items[+kp[1]]){sr.items[+kp[1]].reps=t.value.trim().slice(0,12);saveCfg();}}return;}
   if(t.dataset&&t.dataset.st){if(canEditCfg()){S.cfg.stageTitles[t.dataset.st]=t.value.trim().slice(0,50);saveCfg();}return;}
   if(t.dataset&&t.dataset.sel==='eq'){S.eq=t.value;$('#exlist').innerHTML=exListHTML();return;}
   if(t.dataset&&t.dataset.sel==='prog'){S.progEx=t.value;render(true);}
