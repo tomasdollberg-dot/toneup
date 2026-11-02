@@ -97,6 +97,11 @@ function draw(pa,pb,t,pat){
   }
   if(w==='dbv'){var c2=g.arm.e;h+='<rect x="'+(c2[0]-3).toFixed(1)+'" y="'+(c2[1]-7).toFixed(1)+'" width="6" height="14" rx="2.2" fill="var(--muted,#8a8f98)"/><rect x="'+(c2[0]-5).toFixed(1)+'" y="'+(c2[1]-9).toFixed(1)+'" width="10" height="4" rx="1.6" fill="var(--ink,#111)"/><rect x="'+(c2[0]-5).toFixed(1)+'" y="'+(c2[1]+5).toFixed(1)+'" width="10" height="4" rx="1.6" fill="var(--ink,#111)"/>';}
   if(w==='bar-s'){h+='<circle cx="'+(g.S[0]-1).toFixed(1)+'" cy="'+(g.S[1]-4).toFixed(1)+'" r="8.5" fill="var(--muted,#8a8f98)"/><circle cx="'+(g.S[0]-1).toFixed(1)+'" cy="'+(g.S[1]-4).toFixed(1)+'" r="5" fill="var(--surface,#fff)" opacity=".9"/>';}
+  if(pat.band){ /* banda elástica: aro rojo en rodillas ('k') o tobillos ('a') */
+    var bq=pat.band==='a'?[g.leg.e,g.leg2&&g.leg2.e]:[g.leg.m,g.leg2&&g.leg2.m];
+    if(bq[0]&&bq[1])h+=seg(bq[0],bq[1],1.8,acc);
+    bq.forEach(function(q){if(q)h+='<ellipse cx="'+q[0].toFixed(1)+'" cy="'+q[1].toFixed(1)+'" rx="3.4" ry="7.5" fill="none" stroke="'+acc+'" stroke-width="2.4"/>';});
+  }
   if(w==='cable'){h+='<line x1="'+g.arm.e[0].toFixed(1)+'" y1="'+g.arm.e[1].toFixed(1)+'" x2="'+(pat.cx||180)+'" y2="'+(pat.cy||8)+'" stroke="'+acc+'" stroke-width="1.6" stroke-dasharray="3 3"/>';}
   if(pat.sc)h+='</g>';
   return h;

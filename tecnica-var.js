@@ -576,4 +576,106 @@ d('l-sit','dominada',{sc:.9,nofloor:0,props:[],
  ['Apoya las manos en el suelo o en paralelas a los lados de la cadera, con los brazos rectos.','Empuja el suelo y levanta el cuerpo.','Sube las piernas rectas hasta la horizontal y mantén.'],
  ['Doblar los codos.','Encoger los hombros.'],
  ['Empieza con las rodillas dobladas e ve estirándolas poco a poco.']);
+
+/* ===== glúteo: ejercicios nuevos ===== */
+P.puentesuelo.A.arm=[10,10];
+d('hip-thrust-mancuerna','puente',{w:'db',A:{h:[100,106],s:[62,98],foot:[128,FL],hand:[100,100],ad:-1},B:{h:[100,84],s:[62,98],foot:[128,FL],hand:[100,78],ad:-1}},
+ ['Apoya la espalda alta en un banco y sujeta una mancuerna sobre la cadera con las dos manos.','Empuja con los talones y sube la cadera hasta alinear hombros, cadera y rodillas.','Aprieta los glúteos arriba un segundo y baja controlado.'],
+ ['Arquear la zona lumbar arriba.','Dejar que la mancuerna ruede hacia el abdomen.'],
+ ['Pon una toalla doblada bajo la mancuerna si te molesta en la cadera.']);
+d('hip-thrust-unilateral','puente',{w:null,A:{h:[100,106],s:[62,98],foot:[128,FL],foot2:[134,66]},B:{h:[100,84],s:[62,98],foot:[128,FL],foot2:[140,50]}},
+ ['Apoya la espalda alta en el banco con una pierna estirada en el aire.','Empuja con el talón de la pierna apoyada y sube la cadera sin que se gire.','Aprieta el glúteo arriba y baja controlado.'],
+ ['Girar la cadera hacia el lado de la pierna levantada.','Empujar con la punta del pie.'],
+ ['Empieza sin peso: trabaja cada pierna por separado y deja la más débil para empezar.']);
+d('hip-thrust-banda','puente',{w:null,band:'k',A:{h:[100,106],s:[62,98],foot:[128,FL],foot2:[122,FL]},B:{h:[100,84],s:[62,98],foot:[128,FL],foot2:[122,FL]}},
+ ['Pon la banda justo encima de las rodillas y apoya la espalda alta en el banco.','Sube la cadera empujando con los talones y abriendo las rodillas contra la banda.','Aprieta los glúteos arriba y baja controlado sin cerrar las rodillas.'],
+ ['Dejar que las rodillas se cierren hacia dentro.','Arquear la zona lumbar.'],
+ ['Elige una banda que puedas mantener abierta toda la serie.']);
+d('puente-gluteo-unilateral','puentesuelo',{A:{h:[96,112],s:[56,112],foot:[124,FL],foot2:[130,76],arm:[10,10]},B:{h:[96,86],s:[56,112],foot:[124,FL],foot2:[136,54],arm:[10,10]}},
+ ['Tumbado boca arriba con un pie apoyado cerca del glúteo y la otra pierna estirada hacia arriba.','Empuja con el talón apoyado y sube la cadera sin girarla.','Aprieta el glúteo y baja despacio.'],
+ ['Girar la cadera.','Arquear la zona lumbar al subir.'],
+ ['Si notas el isquio, acerca más el pie al glúteo.']);
+d('puente-gluteo-banda','puentesuelo',{band:'k',A:{h:[96,112],s:[56,112],foot:[124,FL],foot2:[118,FL],arm:[10,10]},B:{h:[96,86],s:[56,112],foot:[124,FL],foot2:[118,FL],arm:[10,10]}},
+ ['Tumbado boca arriba con una banda encima de las rodillas y los pies a la anchura de las caderas.','Sube la cadera empujando con los talones y abre las rodillas contra la banda.','Aprieta los glúteos arriba y baja despacio.'],
+ ['Dejar que las rodillas se cierren.','Subir con impulso.'],
+ ['Es una buena activación antes de sentadillas o peso muerto.']);
+d('puente-gluteo-elevado','puentesuelo',{props:[['bench',128,98,50,26]],A:{h:[96,112],s:[56,112],foot:[138,96],arm:[10,10]},B:{h:[96,86],s:[56,112],foot:[138,96],arm:[10,10]}},
+ ['Tumbado boca arriba con los talones sobre un banco o silla estable.','Empuja con los talones y sube la cadera hasta alinear tronco y muslos.','Aprieta los glúteos y baja despacio sin tocar el suelo con la cadera.'],
+ ['Apoyar los pies en una superficie que resbale.','Arquear la zona lumbar.'],
+ ['Usa un banco firme: con una silla con ruedas puedes perder el equilibrio.']);
+d('patada-gluteo-cuadrupedia','patada',{A:{h:[100,90],t:-80,leg:[0,90],hand:[60,FL],ad:-1,leg2:[0,90]},B:{h:[100,90],t:-80,leg:[0,90],hand:[60,FL],ad:-1,leg2:[86,86]}},
+ ['A cuatro apoyos, con las manos bajo los hombros y las rodillas bajo la cadera.','Estira una pierna hacia atrás hasta alinearla con el cuerpo.','Aprieta el glúteo arriba y vuelve sin apoyar la rodilla.'],
+ ['Arquear la zona lumbar para subir más la pierna.','Girar la cadera.'],
+ ['Sube solo hasta donde el glúteo siga trabajando: si notas la espalda, ya te has pasado.']);
+d('patada-burro','patada',{A:{h:[100,90],t:-80,leg:[0,90],hand:[60,FL],ad:-1,leg2:[8,96]},B:{h:[100,90],t:-80,leg:[0,90],hand:[60,FL],ad:-1,leg2:[88,176]}},
+ ['A cuatro apoyos con una rodilla doblada a 90°.','Empuja la planta del pie hacia el techo sin estirar la pierna.','Aprieta el glúteo arriba y baja sin apoyar la rodilla.'],
+ ['Arquear la zona lumbar.','Dar un golpe en lugar de empujar con control.'],
+ ['Mantén el abdomen firme y la cadera cuadrada con el suelo.']);
+d('hidrante','patada',{A:{h:[100,90],t:-80,leg:[0,90],hand:[60,FL],ad:-1,leg2:[0,90]},B:{h:[100,90],t:-80,leg:[0,90],hand:[60,FL],ad:-1,leg2:[52,100]}},
+ ['A cuatro apoyos con las manos bajo los hombros.','Abre una rodilla hacia el lado, como un perro en una boca de riego, sin girar la cadera.','Baja despacio hasta casi tocar el suelo.'],
+ ['Girar el tronco para subir más la rodilla.','Subir con impulso.'],
+ ['Se ve de perfil en el dibujo, pero el movimiento real es hacia el lado. Trabaja el glúteo medio.']);
+d('almeja-banda','abductor',{props:[],band:'k',A:{s:[56,114],h:[96,116],leg:[84,-100],leg2:[84,-100],arm:[70,120]},B:{s:[56,114],h:[96,116],leg:[84,-100],leg2:[128,-54],arm:[70,120]}},
+ ['Tumbado de lado con las rodillas dobladas y una banda por encima de ellas.','Abre la rodilla de arriba sin separar los pies ni girar la cadera.','Baja despacio y repite antes de cambiar de lado.'],
+ ['Girar la cadera hacia atrás.','Subir con impulso.'],
+ ['Es un trabajo suave de glúteo medio, muy bueno para rodillas y caderas.']);
+d('caminata-lateral-banda','granjero',{w:null,band:'k',A:{h:[100,74],t:2,foot:[88,FL],foot2:[112,FL]},B:{h:[100,74],t:2,foot:[80,FL],foot2:[120,FL]}},
+ ['De pie con la banda sobre las rodillas o los tobillos y las rodillas algo dobladas.','Da pasos laterales manteniendo tensión en la banda.','Vuelve al otro lado sin juntar los pies del todo.'],
+ ['Dejar que las rodillas se cierren hacia dentro.','Inclinar el tronco.'],
+ ['Se hace de frente; en el dibujo lo ves de perfil.']);
+d('pull-through-polea','bisagra',{w:'cable',cx:6,cy:112,A:{h:[100,62],t:4,foot:fl,arm:[0,0]},B:{h:[80,68],t:68,foot:fl,arm:[0,0]}},
+ ['De espaldas a la polea baja, con la cuerda entre las piernas y las rodillas ligeramente dobladas.','Lleva la cadera hacia atrás con la espalda recta hasta notar el estiramiento.','Empuja la cadera hacia delante y aprieta los glúteos arriba.'],
+ ['Doblar mucho las rodillas y convertirlo en una sentadilla.','Redondear la espalda.'],
+ ['Es una bisagra de cadera guiada: muy buena para aprender el patrón.']);
+d('peso-muerto-rumano-unilateral','bisagra',{w:'db',A:{h:[100,62],t:4,foot:fl,arm:[0,0],leg2:[0,0]},B:{h:[88,64],t:74,foot:fl,arm:[0,0],leg2:[-74,-74]}},
+ ['De pie sobre una pierna con una mancuerna en la mano contraria.','Lleva la cadera atrás mientras la otra pierna sube hacia atrás, con la espalda recta.','Sube apretando el glúteo de la pierna de apoyo.'],
+ ['Girar la cadera hacia el lado de la pierna libre.','Redondear la espalda.'],
+ ['Apóyate con una mano en una pared si pierdes el equilibrio.']);
+d('zancada-inversa','zancada',{A:{h:[100,64],t:6,foot:[104,FL],foot2:[100,FL],arm:[2,2]},B:{h:[98,96],t:14,foot:[108,FL],foot2:[62,FL-6],arm:[2,2]}},
+ ['De pie con una mancuerna en cada mano.','Da un paso largo hacia atrás y baja hasta que ambas rodillas formen unos 90°.','Empuja con el pie de delante para volver y aprieta el glúteo.'],
+ ['Dar un paso demasiado corto y cargar la rodilla.','Inclinar el tronco hacia un lado.'],
+ ['Es más amable con la rodilla que la zancada hacia delante.']);
+d('patada-gluteo-banda','patada',{w:null,band:'a',props:[['rect',140,20,6,104]],A:{h:[100,62],t:4,foot:fl,leg2:[0,0],hand:[138,60],ad:-1},B:{h:[100,62],t:8,foot:fl,leg2:[-34,-36],hand:[138,60],ad:-1}},
+ ['De pie, con una banda en los tobillos y las manos apoyadas en una pared.','Lleva una pierna hacia atrás con la rodilla casi estirada.','Aprieta el glúteo y vuelve sin dejar que la banda tire de ti.'],
+ ['Inclinar el tronco hacia delante.','Arquear la zona lumbar.'],
+ ['Mantén la rodilla de apoyo ligeramente flexionada.']);
+
+/* ===== cardio ===== */
+P.caminar={w:null,A:{h:[100,62],t:4,foot:[114,FL-8],foot2:[86,FL],arm:[-30,-20]},B:{h:[100,62],t:4,foot:[86,FL],foot2:[114,FL-8],arm:[30,50]}};
+d('caminata-rapida','caminar',{},
+ ['Camina erguido, mirando al frente, con los hombros relajados.','Da pasos firmes y rápidos, moviendo los brazos de forma natural.','Mantén un ritmo con el que puedas hablar pero notes el esfuerzo.'],
+ ['Encorvarte mirando al suelo.','Dar pasos demasiado largos.'],
+ ['Calzado cómodo y progresión suave: empieza con 10 min y sube poco a poco.']);
+d('cinta-inclinada','caminar',{t:0,A:{h:[100,62],t:12,foot:[112,FL-8],foot2:[86,FL],arm:[-30,-20]},B:{h:[100,62],t:12,foot:[86,FL],foot2:[112,FL-8],arm:[30,50]}},
+ ['Sube la inclinación entre un 8 y un 12 % y elige una velocidad de paseo rápido.','Camina con el torso erguido y los brazos sueltos, sin agarrarte.','Mantén el paso constante durante todo el tiempo.'],
+ ['Agarrarte a las barras y apoyar el peso en ellas.','Inclinar mucho el tronco hacia delante.'],
+ ['Si notas la espalda baja, baja un poco la inclinación.']);
+d('eliptica','caminar',{props:[['rect',130,36,5,64]],A:{h:[100,62],t:2,foot:[110,FL-4],foot2:[90,FL],hand:[134,56],ad:-1},B:{h:[100,62],t:2,foot:[90,FL],foot2:[110,FL-4],hand:[134,56],ad:-1}},
+ ['Sube a los pedales y agarra las manijas sin apoyar todo el peso en ellas.','Empuja con todo el pie en un movimiento fluido, como deslizándote.','Mantén el cuerpo erguido y el ritmo constante.'],
+ ['Apoyar el peso en los brazos.','Encorvar la espalda.'],
+ ['Pedalea también hacia atrás un rato para variar el trabajo.']);
+d('escaladora','caminar',{props:[['rect',130,40,5,60]],A:{h:[100,62],t:2,foot:[110,FL-22],foot2:[92,FL],hand:[134,58],ad:-1},B:{h:[100,62],t:2,foot:[92,FL],foot2:[110,FL-22],hand:[134,58],ad:-1}},
+ ['Sube a la máquina con el torso erguido y apoya las manos suavemente.','Da pasos completos pisando con todo el pie.','Mantén un ritmo constante, sin rebotar.'],
+ ['Apoyarte con todo el peso en las barras.','Pasos muy cortos sobre la punta del pie.'],
+ ['Empieza con un nivel bajo: es más exigente de lo que parece.']);
+P.bici={w:null,props:[['rect',72,78,18,4],['rect',120,52,4,50],['rect',96,100,4,24]],A:{h:[84,76],t:30,leg:[60,10],leg2:[18,66],hand:[122,56],ad:-1},B:{h:[84,76],t:30,leg:[18,66],leg2:[60,10],hand:[122,56],ad:-1}};
+d('bicicleta-estatica','bici',{},
+ ['Ajusta el sillín a la altura de la cadera y siéntate con la espalda recta.','Pedalea de forma fluida, sin balancear las caderas.','Ajusta la resistencia para mantener un ritmo constante.'],
+ ['Sillín demasiado bajo: carga las rodillas.','Encorvar los hombros.'],
+ ['Con la pierna casi extendida abajo, la altura es correcta.']);
+P.remoerg={w:null,props:[['rect',54,118,110,4]],A:{h:[86,104],t:8,foot:[128,FL-6],hand:[134,80],ad:-1},B:{h:[100,104],t:-30,foot:[150,FL-6],hand:[102,86],ad:-1}};
+d('remo-ergometro','remoerg',{},
+ ['Siéntate con las rodillas dobladas y las manos agarrando la barra con los brazos estirados.','Empuja con las piernas, inclina el torso hacia atrás y tira de la barra hacia el abdomen.','Vuelve en orden inverso: brazos, torso y piernas.'],
+ ['Tirar primero con los brazos.','Redondear la espalda.'],
+ ['Piensa en 60 % piernas, 30 % tronco y 10 % brazos.']);
+P.comba={w:null,A:{h:[100,62],t:0,foot:fl,arm:[34,96]},B:{h:[100,50],t:0,foot:[100,FL-14],arm:[34,96]}};
+d('comba','comba',{},
+ ['De pie, con la comba detrás y los codos pegados al cuerpo.','Haz girar la comba con las muñecas y salta lo justo para que pase.','Aterriza suave sobre la punta de los pies, con las rodillas ligeramente flexionadas.'],
+ ['Saltar demasiado alto.','Mover los brazos desde los hombros.'],
+ ['Hazlo sobre una superficie que amortigüe y empieza por series cortas.']);
+P.tijera={w:null,A:{h:[100,62],t:0,foot:fl,arm:[0,0]},B:{h:[100,56],t:0,foot:[100,FL-8],arm:[145,155]}};
+d('saltos-tijera','tijera',{},
+ ['De pie con los pies juntos y los brazos pegados al cuerpo.','Salta abriendo piernas y subiendo los brazos por encima de la cabeza.','Vuelve al inicio con otro salto y repite a ritmo constante.'],
+ ['Aterrizar con las rodillas rígidas.','Encoger los hombros al subir los brazos.'],
+ ['Se ve de perfil en el dibujo; el movimiento real abre las piernas hacia los lados.']);
 })();
