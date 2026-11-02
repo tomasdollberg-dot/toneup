@@ -215,6 +215,7 @@ p{margin:0}
 .sw-bar{height:6px;border-radius:99px;background:var(--line-soft);margin-bottom:14px;overflow:hidden}
 .sw-bar i{display:block;height:100%;background:var(--green);border-radius:99px;transition:width .25s}
 .sx{padding:12px 10px 12px}
+.swl{display:flex;flex-direction:column}
 .sx-ih{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .sw-min{display:block;width:100%;height:30px;border:0;background:none;padding:0}
 .sw-min i{display:block;width:44px;height:5px;border-radius:99px;background:var(--line);margin:0 auto}
@@ -1255,7 +1256,7 @@ function exHTML(it,i,d){
     if(j<it.sets.length-1)h+='<button class="rdiv" data-act="timer-open" data-ex="'+esc(it.id)+'" aria-label="Descanso de '+clock(rs)+'. Toca para cambiarlo"><span>'+clock(rs)+'</span></button>';
   });
   h+='<button class="addset" data-act="add-set" data-i="'+i+'">+ Añadir serie ('+clock(rs)+')</button>';
-  h+='<div class="ex-f">'+(it.sets.length>1?'<button class="btn sm" data-act="del-set" data-i="'+i+'" aria-label="Quitar última serie">'+ic(I.minus,16)+'Quitar serie</button>':'')+cbtn('rm:'+i,'Quitar ejercicio','btn sm','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+platesHTML(it,d)+'</div>';
+  h+='<div class="ex-f"><button class="btn sm" data-act="swap-open" data-mode="draft" data-i="'+i+'">Cambiar ejercicio</button>'+(it.sets.length>1?'<button class="btn sm" data-act="del-set" data-i="'+i+'" aria-label="Quitar última serie">'+ic(I.minus,16)+'Quitar serie</button>':'')+cbtn('rm:'+i,'Quitar ejercicio','btn sm','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+platesHTML(it,d)+'</div>';
   return h+'</section>';
 }
 
@@ -1493,7 +1494,7 @@ function vPlan(){
     r.items.forEach(function(it,i){
       var ex=exOf(it.id),last=it.last;
       var lastTxt=last?fmtSet(ex,last):'sin carga previa';
-      h+='<div class="prow'+(S.edit?' ed':'')+'"><div class="pn">'+esc(ex.name)+(it.note&&!S.edit?'<div class="meta">'+esc(it.note)+'</div>':'')+'</div>';
+      h+='<div class="prow'+(S.edit?' ed':'')+'"><div class="pn">'+esc(ex.name)+(S.edit?' <button class="mini" data-act="swap-open" data-mode="plan" data-k="'+esc(r.key)+'" data-i="'+i+'">Cambiar</button>':'')+(it.note&&!S.edit?'<div class="meta">'+esc(it.note)+'</div>':'')+'</div>';
       if(S.edit){
         h+='<div class="pctl"><button class="ico" data-act="r-up" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Subir">'+ic(I.up,16)+'</button><button class="ico" data-act="r-down" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Bajar">'+ic(I.down,16)+'</button>'
           +'<button class="ico" data-act="r-minus" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Menos series">'+ic(I.minus,16)+'</button><span class="ps">'+it.sets+'×</span><button class="ico" data-act="r-plus" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Más series">'+ic(I.plus,16)+'</button>'
@@ -1767,7 +1768,49 @@ function openPicker(mode,key){
   S.picker={mode:mode,key:key};S.pq='';
   $('#picker').innerHTML='<div class="sheet-bg" data-act="pk-close"></div><div class="sheet" role="dialog" aria-label="Añadir ejercicio"><div class="sheet-in"><div class="sheet-h"><strong>Añadir ejercicio</strong><button class="ico" data-act="pk-close" aria-label="Cerrar">'+ic(I.x,20)+'</button></div><div class="search"><input id="pq" type="search" placeholder="Buscar ejercicio…" autocomplete="off" aria-label="Buscar ejercicio"></div><div id="plist">'+pickerListHTML()+'</div></div></div>';
 }
-function closePicker(){S.picker=null;S.timer=null;$('#picker').innerHTML='';afterRender();}
+
+/* ---------- cambiar un ejercicio por otro parecido ---------- */
+var CARE_RX={back:/peso muerto|buenos d[ií]as|remo con barra|remo pendlay|hiperext|lumbar|rack pull|sentadilla con barra|press militar/i,knees:/zancada|step|b[uú]lgara|salto|sissy|pistol|sentadilla (frontal|hack)|hack/i,shoulders:/press militar|fondos|aperturas|elevaci[oó]n lateral|elevaci[oó]n frontal|press tras nuca|arnold|dominadas|muscle/i};
+function swapCands(cur,sw,taken){
+  var m=muscleOf(cur)||cur.grp,av=window.CF_ASIS&&CF_ASIS.AVOID||{};
+  var out=[];
+  EX.forEach(function(e){
+    if(e.id===cur.id||taken.indexOf(e.id)>=0)return;
+    if((muscleOf(e)||e.grp)!==m)return;
+    if(sw.eq&&e.eq!==sw.eq)return;
+    var bad=false;['back','knees','shoulders'].forEach(function(k){if(sw.care[k]&&((av[k]||[]).indexOf(e.id)>=0||CARE_RX[k].test(e.name)))bad=true;});
+    if(bad)return;
+    var sc=0;if(e.t===cur.t)sc+=2;if(e.eq!==cur.eq)sc+=1;if(e.eq==='Máquina'||e.eq==='Mancuerna')sc+=1;
+    out.push({e:e,sc:sc});
+  });
+  out.sort(function(a,b){return b.sc-a.sc||a.e.name.localeCompare(b.e.name,'es');});
+  return out.slice(0,8).map(function(x){return x.e;});
+}
+function renderSwap(){
+  var sw=S.swap;if(!sw)return;
+  var cur=exOf(sw.id),taken=sw.taken||[];
+  var list=swapCands(cur,sw,taken);
+  var eqs=['Mancuerna','Máquina','Polea','Barra','Peso corporal'];
+  var care=[['back','Espalda'],['knees','Rodillas'],['shoulders','Hombros']];
+  $('#picker').innerHTML='<div class="sheet-bg" data-act="pk-close"></div><div class="sheet ti" role="dialog" aria-label="Cambiar ejercicio"><div class="sheet-in"><div class="grab"></div>'
+    +'<div class="sheet-h"><strong>Cambiar ejercicio</strong><button class="ico" data-act="pk-close" aria-label="Cerrar">'+ic(I.x,20)+'</button></div>'
+    +'<p class="meta">Ahora: <b>'+esc(cur.name)+'</b>. Te propongo otros que trabajan lo mismo ('+esc(muscleOf(cur)||cur.grp)+').</p>'
+    +'<p class="eyebrow" style="margin:4px 0 0">Solo con este material</p><div class="tpre">'+['']
+      .concat(eqs).map(function(q){return '<button class="gc'+(sw.eq===q?' on':'')+'" data-act="swap-eq" data-v="'+esc(q)+'">'+(q||'Cualquiera')+'</button>';}).join('')+'</div>'
+    +'<p class="eyebrow" style="margin:4px 0 0">Cuida estas zonas (evito ejercicios que cargan mucho)</p><div class="tpre">'+care.map(function(c){return '<button class="gc'+(sw.care[c[0]]?' on':'')+'" data-act="swap-care" data-v="'+c[0]+'">'+c[1]+'</button>';}).join('')+'</div>'
+    +(list.length?'<div class="swl">'+list.map(function(e){return '<button class="pk" data-act="swap-do" data-id="'+esc(e.id)+'"><span>'+esc(e.name)+'<br><small>'+esc(e.eq)+(e.t==='C'?' · compuesto':' · aislado')+'</small></span><span class="mini">Elegir</span></button>';}).join('')+'</div>'
+      :'<div class="card empty">No encuentro alternativas con esos filtros. Prueba con otro material o quita alguna zona.</div>')
+    +'<p class="meta">Si te duele algo al hacer un ejercicio, para. Esto es una ayuda general y no sustituye a un profesional.</p></div></div>';
+}
+function openSwap(mode,key,i){
+  var it=mode==='draft'?S.draft&&S.draft.items[i]:(routine().find(function(r){return r.key===key;})||{items:[]}).items[i];
+  if(!it)return;
+  var list=mode==='draft'?S.draft.items:(routine().find(function(r){return r.key===key;})||{items:[]}).items;
+  S.picker=null;S.timer=null;
+  S.swap={mode:mode,k:key,i:i,id:it.id,eq:'',care:{back:false,knees:false,shoulders:false},taken:list.map(function(x){return x.id;})};
+  renderSwap();
+}
+function closePicker(){S.swap=null;S.picker=null;S.timer=null;$('#picker').innerHTML='';afterRender();}
 
 /* ---------- temporizador de descanso ---------- */
 function clampSec(v){return Math.max(10,Math.min(900,Math.round(v)));}
@@ -1882,6 +1925,20 @@ var ACT={
   },
   'open-picker':function(b){openPicker(b.dataset.mode,b.dataset.k);},
   'pk-close':function(){closePicker();},
+  'swap-open':function(b){openSwap(b.dataset.mode,b.dataset.k,+b.dataset.i);},
+  'swap-eq':function(b){if(S.swap){S.swap.eq=b.dataset.v;renderSwap();}},
+  'swap-care':function(b){if(S.swap){var k=b.dataset.v;S.swap.care[k]=!S.swap.care[k];renderSwap();}},
+  'swap-do':function(b){
+    var sw=S.swap;if(!sw)return;var nid=b.dataset.id,ex=exOf(nid);
+    if(sw.mode==='draft'){
+      var it=S.draft&&S.draft.items[sw.i];if(!it)return;
+      it.id=nid;it.last=null;it.sets=it.sets.map(function(){return {kg:'',reps:'',done:false,w:false};});saveDraft();closePicker();render(true);toast('Cambiado por '+ex.name+'.');
+    }else{
+      if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
+      var ss=routine().find(function(x){return x.key===sw.k;}),pi=ss&&ss.items[sw.i];if(!pi)return;
+      pi.id=nid;pi.last=null;saveCfg();closePicker();render(true);toast('Cambiado por '+ex.name+'.');
+    }
+  },
   'ex-pop':function(b){exPopup(b.dataset.id);},
   'ex-info':function(b){S.xi=S.xi===b.dataset.id?null:b.dataset.id;render(true);},
   'pk-add':function(b){

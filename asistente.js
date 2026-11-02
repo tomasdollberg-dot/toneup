@@ -112,5 +112,5 @@ function build(q,H){
   var nm=GOALS[q.goal]+' · '+days+' días · '+q.mins+' min';
   return {est:est,plan:{id:pid,name:nm,note:GOALS[q.goal]+', '+days+' días por semana, '+q.mins+' minutos, nivel '+NAMES[q.level]+'. Creado con el asistente: es un punto de partida, ajústalo a tus sensaciones.'+extra,sessions:sessions,gen:{asis:true,goal:q.goal,days:days,mins:q.mins,equip:q.equip,level:q.level},why:why,created:new Date().toISOString()}};
 }
-window.CF_ASIS={GOALS:GOALS,GOAL_HELP:GOAL_HELP,EQUIP:EQUIP,LEVEL:LEVEL,build:build,minutes:minutes};
+window.CF_ASIS={AVOID:AVOID,GOALS:GOALS,GOAL_HELP:GOAL_HELP,EQUIP:EQUIP,LEVEL:LEVEL,build:build,minutes:minutes};
 })();
