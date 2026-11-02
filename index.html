@@ -199,16 +199,16 @@ p{margin:0}
 .ex-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;padding:0 2px}
 .ex-h .nm{min-width:0}
 .note{font-size:13px;background:var(--raised);border-radius:var(--r-sm);padding:8px 11px;margin:0 0 10px;color:var(--muted)}
-.sh,.set{display:grid;grid-template-columns:40px minmax(0,1fr) minmax(0,1fr) 48px;gap:8px;align-items:center}
+.sh,.set{display:grid;grid-template-columns:36px minmax(0,1fr) minmax(0,1fr) 54px;gap:8px;align-items:center}
 .sh{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:0 0 4px;text-align:center}
-.set{padding:4px;border-radius:var(--r-md);margin:0 -4px}
+.set{padding:5px 4px;border-radius:var(--r-md);margin:0 -4px}
 .set.done{background:color-mix(in srgb,var(--sc) 13%,var(--surface))}
-.sn{height:44px;border:0;background:transparent;border-radius:var(--r-sm);font-family:var(--font-num);font-weight:600;font-size:15px;color:var(--muted)}
+.sn{height:54px;border:0;background:transparent;border-radius:var(--r-sm);font-family:var(--font-num);font-weight:600;font-size:15px;color:var(--muted)}
 .set.warm .sn{border:1.5px dashed var(--muted);color:var(--ink);font-family:var(--font-display);font-size:18px;font-weight:800}
-.in{width:100%;height:46px;border:1.5px solid transparent;background:var(--raised);border-radius:14px;text-align:center;font-family:var(--font-num);font-size:17px;font-weight:500;padding:0 4px;min-width:0}
+.in{width:100%;height:56px;border:1.5px solid transparent;background:var(--raised);border-radius:16px;text-align:center;font-family:var(--font-num);font-size:21px;font-weight:500;padding:0 4px;min-width:0}
 .in::placeholder{color:var(--muted);opacity:.55}
 .in:focus{outline:0;border-color:var(--sc);background:var(--surface)}
-.ck{width:44px;height:44px;justify-self:center;border:1.5px solid var(--line);background:var(--surface);border-radius:50%;display:flex;align-items:center;justify-content:center;color:transparent}
+.ck{width:50px;height:50px;justify-self:center;border:1.5px solid var(--line);background:var(--surface);border-radius:50%;display:flex;align-items:center;justify-content:center;color:transparent}
 .ck:hover{border-color:var(--muted)}
 .set.done .ck{background:var(--sc);border-color:var(--sc);color:var(--on-color)}
 .ex-f{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
@@ -1445,7 +1445,7 @@ function exDetail(e){
   if(e.cue)h+='<p><b>Consejo:</b> '+esc(e.cue)+'</p>';
   if(ti){
     var fg=CF_TEC.figure(pk);
-    h+='<div class="tec">'+(fg?'<div>'+fg+'<p class="fig-cap">Dibujo esquemático del movimiento. La postura exacta cambia un poco según la máquina.</p></div>':'')+'<div class="tec-b"><b>Cómo hacerlo</b><ol>'+ti.steps.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol></div></div>'
+    h+='<div class="tec">'+(fg?'<div>'+fg+'<p class="fig-cap">Dibujo esquemático. En rojo, la zona que más trabajas. La postura exacta cambia un poco según la máquina.</p></div>':'')+'<div class="tec-b"><b>Cómo hacerlo</b><ol>'+ti.steps.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol></div></div>'
       +'<div class="tec2"><div><b>Errores típicos</b><ul>'+ti.err.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div><div class="safe"><b>Para evitar lesiones</b><ul>'+ti.safe.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div></div>'
       +'<p class="meta">La primera vez usa un peso ligero para aprender el gesto. Si notas dolor punzante o en una articulación, para y consulta con un profesional.</p>';
   }

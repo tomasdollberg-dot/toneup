@@ -48,6 +48,13 @@ function mix(A,B,t){
 /* ---- dibujo ---- */
 function pt(a){return a[0].toFixed(1)+','+a[1].toFixed(1);}
 function seg(a,b,w,c){return '<line x1="'+a[0].toFixed(1)+'" y1="'+a[1].toFixed(1)+'" x2="'+b[0].toFixed(1)+'" y2="'+b[1].toFixed(1)+'" stroke="'+c+'" stroke-width="'+w+'" stroke-linecap="round"/>';}
+/* miembro con volumen: forma cónica de ancho w1 a w2 con extremos redondeados */
+function limb(a,b,w1,w2,c,op){
+  var dx=b[0]-a[0],dy=b[1]-a[1],l=Math.sqrt(dx*dx+dy*dy)||1,nx=-dy/l,ny=dx/l,r1=w1/2,r2=w2/2;
+  var P=[[a[0]+nx*r1,a[1]+ny*r1],[b[0]+nx*r2,b[1]+ny*r2],[b[0]-nx*r2,b[1]-ny*r2],[a[0]-nx*r1,a[1]-ny*r1]];
+  var o=op!=null?' opacity="'+op+'"':'';
+  return '<g fill="'+c+'"'+o+'><polygon points="'+P.map(pt).join(' ')+'"/><circle cx="'+a[0].toFixed(1)+'" cy="'+a[1].toFixed(1)+'" r="'+r1+'"/><circle cx="'+b[0].toFixed(1)+'" cy="'+b[1].toFixed(1)+'" r="'+r2+'"/></g>';
+}
 function footOf(ank,ft){var r=ft*Math.PI/180;return [ank[0]+L.ft*Math.cos(r),ank[1]+L.ft*Math.sin(r)];}
 function draw(pa,pb,t,pat){
   var p=mix(pa,pb,t),g=solve(p),h='';
@@ -61,24 +68,34 @@ function draw(pa,pb,t,pat){
     if(q[0]==='bar')h+='<line x1="'+q[1]+'" y1="'+q[2]+'" x2="'+q[3]+'" y2="'+q[4]+'" stroke="var(--muted,#8a8f98)" stroke-width="3" stroke-linecap="round"/>';
     if(q[0]==='post')h+='<line x1="'+q[1]+'" y1="'+q[2]+'" x2="'+q[1]+'" y2="'+FLOOR+'" stroke="var(--line,#cfd3da)" stroke-width="4"/>';
   });
-  // pierna trasera
-  if(g.leg2){var a2=g.leg2;h+=seg(g.H,a2.m,5,back)+seg(a2.m,a2.e,5,back)+seg(a2.e,footOf(a2.e,g.ft),4,back);}
-  // brazo trasero (ligero)
+  var hl=pat.hl||[],hot=function(k){return hl.indexOf(k)>=0;};
+  var skin='var(--muted,#8a8f98)',hc=function(k,base){return hot(k)?acc:base;};
+  // pierna trasera (más clara)
+  if(g.leg2){var a2=g.leg2;h+=limb(g.H,a2.m,10,7.5,back,.85)+limb(a2.m,a2.e,7.5,5,back,.85)+limb(a2.e,footOf(a2.e,g.ft),5,4,back,.85);}
   // pierna delantera
-  h+=seg(g.H,g.leg.m,6,body)+seg(g.leg.m,g.leg.e,6,body)+seg(g.leg.e,footOf(g.leg.e,g.ft),5,body);
-  // tronco
-  h+=seg(g.H,g.S,7,body);
-  h+='<circle cx="'+g.head[0].toFixed(1)+'" cy="'+g.head[1].toFixed(1)+'" r="7.5" fill="none" stroke="'+body+'" stroke-width="3.5"/>';
+  var fo=footOf(g.leg.e,g.ft);
+  h+=limb(g.H,g.leg.m,hot('thigh')?13:11.5,8.5,hc('thigh',body))+limb(g.leg.m,g.leg.e,8.5,5.5,hc('calf',body))+limb(g.leg.e,fo,6,4.5,body);
+  h+='<circle cx="'+g.leg.m[0].toFixed(1)+'" cy="'+g.leg.m[1].toFixed(1)+'" r="4.6" fill="'+hc('thigh',body)+'"/>';
+  // tronco: más ancho en el hombro que en la cadera
+  h+=limb(g.H,g.S,10,hot('torso')?15:13,hc('torso',body));
+  // cabeza
+  var hd=g.head;
+  h+='<circle cx="'+hd[0].toFixed(1)+'" cy="'+hd[1].toFixed(1)+'" r="7.6" fill="var(--surface,#fff)" stroke="'+body+'" stroke-width="3"/>';
+  var ux=hd[0]-g.S[0],uy=hd[1]-g.S[1],ul=Math.sqrt(ux*ux+uy*uy)||1;
+  h+=limb(g.S,[g.S[0]+ux/ul*5,g.S[1]+uy/ul*5],6,6,body);
   // brazo
-  h+=seg(g.S,g.arm.m,5.5,body)+seg(g.arm.m,g.arm.e,5.5,body);
+  h+=limb(g.S,g.arm.m,hot('upperarm')||hot('shoulder')?10:8.5,6.5,hc('upperarm',body))+limb(g.arm.m,g.arm.e,6.5,4.6,hc('forearm',body));
+  h+='<circle cx="'+g.S[0].toFixed(1)+'" cy="'+g.S[1].toFixed(1)+'" r="'+(hot('shoulder')?7.2:6)+'" fill="'+(hot('shoulder')?acc:body)+'"/>';
+  h+='<circle cx="'+g.arm.e[0].toFixed(1)+'" cy="'+g.arm.e[1].toFixed(1)+'" r="3.4" fill="'+body+'"/>';
   // peso en la mano / hombro
   var w=pat.w;
   if(w==='bar'||w==='db'){
     var c=g.arm.e;
     if(w==='bar')h+='<line x1="'+(c[0]-2).toFixed(1)+'" y1="'+(c[1]-15).toFixed(1)+'" x2="'+(c[0]-2).toFixed(1)+'" y2="'+(c[1]+15).toFixed(1)+'" stroke="'+acc+'" stroke-width="3" stroke-linecap="round" opacity=".0"/>';
-    h+='<circle cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="'+(w==='bar'?7:5.5)+'" fill="'+acc+'"/>';
+    if(w==='bar')h+='<circle cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="8.5" fill="var(--muted,#8a8f98)"/><circle cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="5.2" fill="var(--surface,#fff)" opacity=".9"/><circle cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="1.8" fill="var(--muted,#8a8f98)"/>';
+    else h+='<rect x="'+(c[0]-7).toFixed(1)+'" y="'+(c[1]-3).toFixed(1)+'" width="14" height="6" rx="2.2" fill="var(--muted,#8a8f98)"/><rect x="'+(c[0]-9).toFixed(1)+'" y="'+(c[1]-5).toFixed(1)+'" width="4" height="10" rx="1.6" fill="var(--ink,#111)"/><rect x="'+(c[0]+5).toFixed(1)+'" y="'+(c[1]-5).toFixed(1)+'" width="4" height="10" rx="1.6" fill="var(--ink,#111)"/>';
   }
-  if(w==='bar-s'){h+='<circle cx="'+(g.S[0]-1).toFixed(1)+'" cy="'+(g.S[1]-4).toFixed(1)+'" r="7" fill="'+acc+'"/>';}
+  if(w==='bar-s'){h+='<circle cx="'+(g.S[0]-1).toFixed(1)+'" cy="'+(g.S[1]-4).toFixed(1)+'" r="8.5" fill="var(--muted,#8a8f98)"/><circle cx="'+(g.S[0]-1).toFixed(1)+'" cy="'+(g.S[1]-4).toFixed(1)+'" r="5" fill="var(--surface,#fff)" opacity=".9"/>';}
   if(w==='cable'){h+='<line x1="'+g.arm.e[0].toFixed(1)+'" y1="'+g.arm.e[1].toFixed(1)+'" x2="'+(pat.cx||180)+'" y2="'+(pat.cy||8)+'" stroke="'+acc+'" stroke-width="1.6" stroke-dasharray="3 3"/>';}
   if(pat.sc)h+='</g>';
   return h;
@@ -239,5 +256,9 @@ function start(svg){
   raf=requestAnimationFrame(frame);
 }
 function still(key,t){var pat=P[key];if(!pat)return '';return '<svg class="fig" viewBox="0 -14 200 148" aria-hidden="true">'+draw(pat.A,pat.B,t==null?1:t,pat)+'</svg>';}
+var HL={thigh:'sentadilla goblet prensa zancada extensionpierna bisagra puente puentesuelo curlpierna patada abductor',calf:'gemelo',
+ torso:'press inclinado aperturas cruce flexion fondos jalon dominada remo remopolea pullover hiper plancha crunch colgado',
+ shoulder:'pressh lateral frontal pajaros facepull encoger',upperarm:'curl triceps skull fondos press inclinado flexion',forearm:'granjero'};
+Object.keys(HL).forEach(function(tag){HL[tag].split(' ').forEach(function(k){if(P[k])(P[k].hl=P[k].hl||[]).push(tag);});});
 window.CF_TEC={still:still,patOf:patOf,info:info,figure:figure,start:start,stop:stop,keys:Object.keys(P)};
 })();
