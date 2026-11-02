@@ -1645,8 +1645,12 @@ function exDetail(e){
     h+='<p class="meta">Mejor serie: <b class="num">'+esc(fmtSet(e,bestS))+'</b>'+(!bw&&bestE1(e.id)?' · 1RM estimado <b class="num">'+fmt(bestE1(e.id))+' kg</b>':'')+' · '+real+' sesiones registradas</p>';
   }else h+='<p class="meta">Aún sin registros.</p>';
   h+='<div class="acts"><span class="lbl">Descanso sugerido: '+(restFor(e)/60)+' min</span></div>';
-  h+='<div class="acts"><button class="mini" data-act="ex-add-today" data-id="'+esc(e.id)+'">'+(S.draft?'Añadir a la sesión de hoy':'Añadir a hoy (elige antes una sesión)')+'</button></div>';
-  h+='<div class="acts"><span class="lbl">Añadir al plan:</span>'+routine().map(function(r){return '<button class="mini" data-act="ex-add-plan" data-id="'+esc(e.id)+'" data-k="'+esc(r.key)+'">'+esc(r.name)+'</button>';}).join('')+'</div>';
+  var rts=routine();
+  if(!rts.length)h+='<div class="acts"><button class="mini" data-act="ex-add-new" data-id="'+esc(e.id)+'">Crear mi primera sesión con este ejercicio</button></div><p class="meta" style="margin:4px 0 0">Aún no tienes ninguna sesión en tu rutina. Se creará una nueva y este ejercicio será el primero.</p>';
+  else{
+    if(S.draft)h+='<div class="acts"><button class="mini" data-act="ex-add-today" data-id="'+esc(e.id)+'">Añadir a mi entrenamiento de hoy</button></div>';
+    h+='<div class="acts"><span class="lbl">Añadir a mi rutina, en la sesión:</span>'+rts.map(function(r){return '<button class="mini" data-act="ex-add-plan" data-id="'+esc(e.id)+'" data-k="'+esc(r.key)+'">'+esc(r.name)+'</button>';}).join('')+'<button class="mini" data-act="ex-add-new" data-id="'+esc(e.id)+'">+ Sesión nueva</button></div>';
+  }
   if(e.custom)h+='<div class="acts">'+cbtn('delex:'+e.id,'Eliminar ejercicio propio','mini','data-act="ex-del-custom" data-id="'+esc(e.id)+'"')+'</div>';
   return h+'</div>';
 }
@@ -2042,8 +2046,14 @@ var ACT={
   },
   'ex-del-custom':function(b){if(!canEditCfg())return;S.cfg.custom=S.cfg.custom.filter(function(e){return e.id!==b.dataset.id;});S.openEx=null;rebuildEx();saveCfg();render(true);},
   'ex-add-today':function(b){
-    if(!S.draft){toast('Elige antes una sesión en Entrenar.');return;}
+    if(!S.draft){toast('Primero empieza una rutina en Entrenar.');return;}
     S.draft.items.push({id:b.dataset.id,last:null,note:'',sets:[emptySet(),emptySet(),emptySet()]});saveDraft();toast('Añadido a la sesión de hoy.');
+  },
+  'ex-add-new':function(b){
+    if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
+    var id=b.dataset.id;
+    editRoutine(function(rt){rt.push({key:'s'+Date.now().toString(36),name:'Sesión '+(rt.length+1),kind:'push',focus:'',items:[{id:id,sets:3,last:null,note:''}]});});
+    toast('Sesión creada con este ejercicio. Puedes cambiarle el nombre en Plan.');
   },
   'ex-add-plan':function(b){editRoutine(function(rt){var r=rt.find(function(x){return x.key===b.dataset.k;});if(r)r.items.push({id:b.dataset.id,sets:3,last:null,note:''});});toast('Añadido al plan.');},
 
