@@ -74,6 +74,7 @@ img{max-width:100%}
 .rtc h3{margin:0 0 2px}.rtc .by{color:var(--muted);font-size:13px}
 .rtc ul{margin:6px 0;padding-left:18px}
 .glos dt{font-weight:700;margin-top:8px}.glos dd{margin:2px 0 0;color:var(--muted)}
+.tab{position:relative}.bdg{position:absolute;top:2px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#D32F2F;color:#fff;font:700 11px/18px system-ui,sans-serif;font-style:normal;text-align:center;box-shadow:0 0 0 2px var(--bg)}.soc-dot{display:inline-block;min-width:18px;height:18px;border-radius:9px;background:#D32F2F;color:#fff;font:700 11px/18px system-ui,sans-serif;text-align:center;margin-left:6px;padding:0 5px}
 .invite b{font-size:17px}.srch{position:relative}.srch input{width:100%;height:48px;border:1.5px solid transparent;background:var(--surface);border-radius:999px;padding:0 16px 0 44px}.sico{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--muted);display:flex;pointer-events:none}.sres{margin-top:8px}.frst{font-size:13px;font-weight:700;color:var(--muted);display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.frst.ok{color:var(--green)}.fr .btn.sm{min-height:40px;padding:0 16px;border-radius:999px;white-space:nowrap}
 /* iOS hace zoom y desplaza la página si un campo tiene menos de 16px */
 input,select,textarea{font-size:16px!important}
@@ -1045,7 +1046,7 @@ function vSoc(){
   if(S.mode!=='db'){
     return h+'<div class="card"><p>Para ver a tus amigos, compartir sesiones y entrar en el ranking necesitas una cuenta.</p>'+(hasBackend()?'<p style="margin-top:10px"><button class="btn primary" data-act="au-open">Iniciar sesión</button></p>':'<p class="meta">Esta copia de la app todavía no está conectada a un servidor, así que solo guarda tus datos en este dispositivo. El README explica cómo conectarla.</p>')+'</div>';
   }
-  var soc=S.soc,subs=[['feed','Actividad'],['rt','Rutinas'],['rank','Ranking'],['fr','Amigos'+(soc.inc.length?' ('+soc.inc.length+')':'')],['me','Perfil']];
+  var soc=S.soc,subs=[['feed','Actividad'],['rt','Rutinas'],['rank','Ranking'],['fr','Amigos'+(soc.inc.length?'<span class="soc-dot">'+soc.inc.length+'</span>':'')],['me','Perfil']];
   h+='<div class="pchips">'+subs.map(function(o){return '<button class="gc'+(soc.sub===o[0]?' on':'')+'" data-act="soc-sub" data-v="'+o[0]+'">'+o[1]+'</button>';}).join('')+'<button class="gc add" data-act="soc-refresh">'+(soc.loading?'Actualizando…':'Actualizar')+'</button></div>';
   if(soc.err)h+='<div class="alert"><span>'+esc(soc.err)+'</span></div>';
   if(soc.sub==='feed'){
@@ -1201,8 +1202,31 @@ function renderBar(){
 function renderNav(){
   renderBar();
   var T=[['inicio','Inicio'],['hoy','Entrenar'],['plan','Plan'],['prog','Progreso'],['soc','Amigos'],['metas','Metas']];
-  $('#nav').innerHTML=T.map(function(t){return '<button class="tab" data-act="tab" data-t="'+t[0]+'"'+((S.tab===t[0]||(t[0]==='inicio'&&S.tab==='ex'))?' aria-current="page"':'')+'>'+ic(I[t[0]],22)+'<span>'+t[1]+'</span></button>';}).join('');
+  $('#nav').innerHTML=T.map(function(t){return '<button class="tab" data-act="tab" data-t="'+t[0]+'"'+((S.tab===t[0]||(t[0]==='inicio'&&S.tab==='ex'))?' aria-current="page"':'')+'>'+ic(I[t[0]],22)+(t[0]==='soc'&&S.mode==='db'&&S.soc&&S.soc.inc.length?'<i class="bdg" aria-label="'+S.soc.inc.length+' solicitudes nuevas">'+S.soc.inc.length+'</i>':'')+'<span>'+t[1]+'</span></button>';}).join('');
+  setAppBadge();
 }
+function setAppBadge(){try{var n=(S.mode==='db'&&S.soc)?S.soc.inc.length:0;if(navigator.setAppBadge){if(n)navigator.setAppBadge(n);else navigator.clearAppBadge();}}catch(e){}}
+var pollBusy=false;
+async function pollReqs(){
+  if(pollBusy||S.mode!=='db'||!prof||!S.soc||!S.soc.loaded||document.hidden)return;
+  pollBusy=true;
+  try{
+    var fr=await sb.from('friendships').select('requester,addressee,status');if(fr.error)return;
+    var acc=[],inc=[],out=[];
+    fr.data.forEach(function(f){var o=f.requester===me.id?f.addressee:f.requester;if(f.status==='accepted')acc.push(o);else if(f.addressee===me.id)inc.push(o);else out.push(o);});
+    var soc=S.soc,same=function(a,b){return a.length===b.length&&a.every(function(x){return b.indexOf(x)>=0;});};
+    if(same(acc,soc.friends)&&same(inc,soc.inc)&&same(out,soc.out))return;
+    var fresh=inc.filter(function(x){return soc.inc.indexOf(x)<0;}),gotAcc=acc.filter(function(x){return soc.friends.indexOf(x)<0;});
+    var need=fresh.concat(gotAcc).filter(function(x){return !soc.profiles[x];});
+    if(need.length){var pr=await sb.from('profiles').select('id,username,display_name').in('id',need);if(!pr.error)pr.data.forEach(function(p){soc.profiles[p.id]=p;});}
+    soc.friends=acc;soc.inc=inc;soc.out=out;
+    if(fresh.length)toast(fresh.length>1?'Tienes '+fresh.length+' solicitudes de amistad nuevas':'@'+((soc.profiles[fresh[0]]||{}).username||'alguien')+' quiere ser tu amigo');
+    else if(gotAcc.length)toast('@'+((soc.profiles[gotAcc[0]]||{}).username||'alguien')+' ha aceptado tu solicitud');
+    var ae=document.activeElement;if(!(ae&&/INPUT|TEXTAREA/.test(ae.tagName)))render(true);else renderNav();
+  }catch(e){}finally{pollBusy=false;}
+}
+setInterval(pollReqs,45000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)pollReqs();});
 function renderStatus(){
   var el=$('#status');
   if(S.mode==='db'){el.innerHTML='<span>'+esc(prof?'@'+prof.username:'Conectado')+'</span> <button class="outb" data-act="au-out" aria-label="Cerrar sesión">Salir</button>';return;}
@@ -1647,6 +1671,7 @@ function wzHTML(){
 function vInicio(){
   var rt=routine(),sug=nextKey(),nm=prof&&(prof.display_name||prof.username);
   var h='<div class="pagehead"><p class="eyebrow">'+esc(nm?'Hola, '+nm:dateLong())+'</p><h1>Inicio</h1></div>';
+  if(S.mode==='db'&&S.soc&&S.soc.inc.length)h+='<div class="alert"><span><b>'+(S.soc.inc.length===1?'1 solicitud de amistad':S.soc.inc.length+' solicitudes de amistad')+'</b>: '+esc(S.soc.inc.slice(0,2).map(function(id){return '@'+((pOf(id)||{}).username||'alguien');}).join(', '))+(S.soc.inc.length>2?' y más':'')+'</span><div><button class="btn sm primary" data-act="fr-go">Ver y responder</button></div></div>';
   if(S.wz)h+=wzHTML();
   else{
     var next=rt.find(function(r){return r.key===sug;})||rt[0];
@@ -2081,6 +2106,7 @@ var ACT={
     if(r.error){toast('No se pudo borrar.');return;}
     Object.keys(S.soc.comments).forEach(function(k){S.soc.comments[k]=S.soc.comments[k].filter(function(c){return c.id!==id;});});render(true);
   },
+  'fr-go':function(){S.tab='soc';S.soc.sub='fr';S.editKey=null;render(true);window.scrollTo(0,0);loadSugg();},
   'fr-invite':async function(){
     var url=inviteUrl(),txt='Entrena conmigo en Tone Up, la app para apuntar tus entrenamientos y compartirlos con amigos. Búscame como @'+(prof?prof.username:'')+'.';
     try{if(navigator.share){await navigator.share({title:'Tone Up',text:txt,url:url});return;}}catch(e){if(e&&e.name==='AbortError')return;}
