@@ -208,6 +208,7 @@ p{margin:0}
 .sw-top{position:sticky;top:0;z-index:15;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 0 8px;margin:-2px 0 6px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px)}
 .sw-ic{width:48px;height:44px;border:0;border-radius:12px;background:var(--raised);display:flex;align-items:center;justify-content:center;color:var(--ink)}
 .sw-el{font-size:17px;color:var(--muted);font-weight:600}
+.cancel-tr{display:block;width:100%;margin-top:12px;min-height:52px;border:0;border-radius:12px;background:#C62828;color:#fff;font-weight:700;font-size:16px}.cancel-tr.armed{background:#8E1B1B;outline:3px solid #ff9a9a}
 .sw-fin{min-height:44px;padding:0 22px;border:0;border-radius:12px;background:var(--green);color:var(--on-color);font-weight:700;font-size:16px}
 .sw-title{margin:6px 0 4px;font-family:var(--font-display);font-size:34px;font-weight:800;text-transform:uppercase;line-height:1}
 .sw-meta{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 8px;color:var(--muted);font-size:14px}
@@ -1171,7 +1172,7 @@ function renderStatus(){
 function draftProgress(d){var n=0;d.items.forEach(function(it){it.sets.forEach(function(s){if(s.done)n++;});});return n;}
 function makeDraft(key){
   var r=routine().find(function(x){return x.key===key;});if(!r)return null;
-  return {key:r.key,name:r.name,kind:r.kind,focus:r.focus,startedAt:null,warm:{},items:r.items.map(function(it){
+  return {key:r.key,name:r.name,kind:r.kind,focus:r.focus,startedAt:Date.now(),warm:{},items:r.items.map(function(it){
     return {id:it.id,reps:it.reps||'',last:it.last||null,note:it.note||'',sets:Array.from({length:it.sets||3},function(){return {kg:'',reps:'',done:false,w:false};})};
   })};
 }
@@ -1197,7 +1198,7 @@ function vHoy(){
     h+='<div class="alert"><span>Tienes una sesión en curso con '+draftProgress(d)+' series hechas.</span><div><button class="btn sm" data-act="switch-no">Seguir con ella</button><button class="btn sm primary" data-act="switch-yes">Descartar y abrir '+esc(pn)+'</button></div></div>';
   }
   if(d){ // entrenamiento minimizado
-    h+='<section class="card hero k-'+d.kind+'"><h3>Entrenamiento en curso</h3><p class="meta">'+esc(d.name)+' · '+draftProgress(d)+' series hechas</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="train-open">Continuar</button>'+cbtn('discard','Descartar','btn','data-act="discard"')+'</div></section>';
+    h+='<section class="card hero k-'+d.kind+'"><h3>Entrenamiento en curso</h3><p class="meta">'+esc(d.name)+' · '+draftProgress(d)+' series hechas</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="train-open">Continuar</button>'+cbtn('discard','Cancelar entrenamiento','btn cancel-tr','data-act="discard"')+'</div></section>';
     return h;
   }
   var key=S.sel&&rt.some(function(r){return r.key===S.sel;})?S.sel:sug,cur=rt.find(function(r){return r.key===key;})||rt[0];
@@ -1224,9 +1225,10 @@ function vTrain(d){
     +'<label class="chk"><input type="checkbox" data-w="mov"'+(d.warm.mov?' checked':'')+'><span>5–10 min de movilidad o cardio suave</span></label>'
     +'<label class="chk"><input type="checkbox" data-w="apx"'+(d.warm.apx?' checked':'')+'><span>Series de aproximación del primer ejercicio (toca el número de serie para marcarla como «A»)</span></label>'
     +'<label class="chk"><input type="checkbox" data-w="abs"'+(d.warm.abs?' checked':'')+'><span>Abdomen, incorporado de forma progresiva</span></label></details>';
+  if(!draftProgress(d))h+=cbtn('discard','Cancelar entrenamiento','btn cancel-tr','data-act="discard"');
   d.items.forEach(function(it,i){h+=exHTML(it,i,d);});
   h+='<button class="btn block" data-act="open-picker" data-mode="draft">'+ic(I.plus,18)+'Añadir ejercicio</button>';
-  h+='<div class="fin" style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn sc" style="flex:1;min-width:180px;min-height:54px;font-size:16px" data-act="finish">Terminar sesión</button>'+cbtn('discard','Descartar','btn','data-act="discard"')+'</div>';
+  h+='<div class="fin" style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn sc" style="flex:1;min-width:180px;min-height:54px;font-size:16px" data-act="finish">Terminar sesión</button></div>'+cbtn('discard','Cancelar entrenamiento','btn cancel-tr','data-act="discard"')+'';
   h+='</div>';
   return h;
 }
