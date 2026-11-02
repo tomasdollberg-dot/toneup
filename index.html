@@ -203,16 +203,34 @@ p{margin:0}
 .ex-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;padding:0 2px}
 .ex-h .nm{min-width:0}
 .note{font-size:13px;background:var(--raised);border-radius:var(--r-sm);padding:8px 11px;margin:0 0 10px;color:var(--muted)}
-.sh,.set{display:grid;grid-template-columns:36px minmax(0,1fr) minmax(0,1fr) 54px;gap:8px;align-items:center}
+.sh,.set{display:grid;grid-template-columns:36px minmax(0,1fr) 74px 70px 50px;gap:6px;align-items:center}
+.pv{font-size:13px;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.sw-top{position:sticky;top:0;z-index:15;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 0 8px;margin:-2px 0 6px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px)}
+.sw-ic{width:48px;height:44px;border:0;border-radius:12px;background:var(--raised);display:flex;align-items:center;justify-content:center;color:var(--ink)}
+.sw-el{font-size:17px;color:var(--muted);font-weight:600}
+.sw-fin{min-height:44px;padding:0 22px;border:0;border-radius:12px;background:var(--green);color:var(--on-color);font-weight:700;font-size:16px}
+.sw-title{margin:6px 0 4px;font-family:var(--font-display);font-size:34px;font-weight:800;text-transform:uppercase;line-height:1}
+.sw-meta{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 8px;color:var(--muted);font-size:14px}
+.sw-meta b{color:var(--ink)}
+.sw-bar{height:6px;border-radius:99px;background:var(--line-soft);margin-bottom:14px;overflow:hidden}
+.sw-bar i{display:block;height:100%;background:var(--green);border-radius:99px;transition:width .25s}
+.sx{padding:12px 10px 12px}
+.sx-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.sx-n{margin:0;font-size:19px;font-weight:700;color:var(--blue);font-family:var(--font-body);text-transform:none;letter-spacing:0}
+.sx-note{margin:0 -10px 8px;padding:9px 14px;background:color-mix(in srgb,var(--gold) 20%,var(--surface));color:var(--ink);font-size:13.5px}
+.rdiv{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:2px 0;color:var(--blue);font-weight:700;font-size:15px;min-height:34px;font-variant-numeric:tabular-nums}
+.rdiv::before,.rdiv::after{content:"";flex:1;height:3px;border-radius:99px;background:color-mix(in srgb,var(--blue) 22%,transparent)}
+.addset{display:block;width:100%;margin-top:8px;min-height:48px;border:0;border-radius:12px;background:var(--raised);font-weight:600;font-size:15px;color:var(--ink)}
+.set.warm .sn{border:0;background:color-mix(in srgb,var(--gold) 22%,transparent);color:var(--gold);font-weight:800}
 .sh{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:0 0 4px;text-align:center}
 .set{padding:5px 4px;border-radius:var(--r-md);margin:0 -4px}
 .set.done{background:color-mix(in srgb,var(--sc) 13%,var(--surface))}
-.sn{height:54px;border:0;background:transparent;border-radius:var(--r-sm);font-family:var(--font-num);font-weight:600;font-size:15px;color:var(--muted)}
+.sn{height:48px;border:0;background:transparent;border-radius:var(--r-sm);font-family:var(--font-num);font-weight:600;font-size:15px;color:var(--muted)}
 .set.warm .sn{border:1.5px dashed var(--muted);color:var(--ink);font-family:var(--font-display);font-size:18px;font-weight:800}
-.in{width:100%;height:56px;border:1.5px solid transparent;background:var(--raised);border-radius:16px;text-align:center;font-family:var(--font-num);font-size:21px;font-weight:500;padding:0 4px;min-width:0}
+.in{width:100%;height:52px;border:1.5px solid transparent;background:var(--raised);border-radius:12px;text-align:center;font-family:var(--font-num);font-size:19px;font-weight:500;padding:0 4px;min-width:0}
 .in::placeholder{color:var(--muted);opacity:.55}
 .in:focus{outline:0;border-color:var(--sc);background:var(--surface)}
-.ck{width:50px;height:50px;justify-self:center;border:1.5px solid var(--line);background:var(--surface);border-radius:50%;display:flex;align-items:center;justify-content:center;color:transparent}
+.ck{width:48px;height:48px;border-radius:12px !important;justify-self:center;border:1.5px solid var(--line);background:var(--surface);border-radius:50%;display:flex;align-items:center;justify-content:center;color:transparent}
 .ck:hover{border-color:var(--muted)}
 .set.done .ck{background:var(--sc);border-color:var(--sc);color:var(--on-color)}
 .ex-f{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
@@ -269,7 +287,7 @@ p{margin:0}
 .rpin{width:84px;height:44px;border:1.5px solid transparent;background:var(--raised);border-radius:14px;text-align:center;font-family:var(--font-num);font-size:16px;min-width:0}
 .sname{flex:1;min-width:0;height:44px;border:1.5px solid transparent;background:var(--raised);border-radius:14px;padding:0 12px;font-family:var(--font-display);font-size:20px;font-weight:800;text-transform:uppercase}
 .sname:focus,.rpin:focus{outline:0;border-color:var(--sc,var(--ink))}
-.fin{position:sticky;bottom:92px;z-index:5;padding:14px 0 4px;background:linear-gradient(to bottom,transparent,var(--bg) 35%)}
+.fin{padding:14px 0 4px}
 .btn.sm{min-height:40px}
 .mini{min-height:40px}
 .gc{min-height:40px}
@@ -372,7 +390,8 @@ p{margin:0}
 .empty{text-align:center;color:var(--muted);padding:24px 14px}
 @media (max-width:400px){
   h1{font-size:38px}
-  .sh,.set{grid-template-columns:34px minmax(0,1fr) minmax(0,1fr) 44px;gap:6px}
+  .sh,.set{grid-template-columns:32px minmax(0,1fr) 68px 62px 46px;gap:5px}
+  .ck{width:44px;height:44px}
   .chip .nm{font-size:20px}
   .wh-n{font-size:32px}
   .tdisp{font-size:56px}
@@ -1149,11 +1168,12 @@ function vHoy(){
   }
   h+='<div class="k-'+d.kind+'">';
   var cs=countSets(d);
-  h+='<div class="wh"><div class="wh-top"><div><p class="wh-k">Sesión en curso</p><div class="wh-n">'+esc(d.name)+'</div></div><div class="wh-c" title="Tiempo de sesión">'+ic(I.timer,16)+'<span class="num" id="elapsed">'+(d.startedAt?clock((Date.now()-d.startedAt)/1000):'0:00')+'</span></div></div><p class="wh-f">'+esc(d.focus||'')+'</p><div class="wh-p"><div class="wh-bar"><i id="whBar" style="width:'+(cs.tot?Math.round(cs.dn/cs.tot*100):0)+'%"></i></div><span class="num" id="whCount">'+cs.dn+'/'+cs.tot+'</span></div></div>';
-  h+='<div class="card warm"><h3>Calentamiento</h3>'
-    +'<label class="chk"><input type="checkbox" data-w="mov"'+(d.warm.mov?' checked':'')+'><span>20 min de estiramiento y movilidad de cuello y espalda</span></label>'
-    +'<label class="chk"><input type="checkbox" data-w="apx"'+(d.warm.apx?' checked':'')+'><span>Series de aproximación del músculo de hoy (toca el número de serie para marcarla como «A»)</span></label>'
-    +'<label class="chk"><input type="checkbox" data-w="abs"'+(d.warm.abs?' checked':'')+'><span>Abdomen, incorporado de forma progresiva</span></label></div>';
+  h+='<div class="sw-top"><button class="sw-ic" data-act="timer-open" data-free="1" aria-label="Temporizador de descanso">'+ic(I.timer,22)+'</button><span class="sw-el num" id="elapsed">'+(d.startedAt?clock((Date.now()-d.startedAt)/1000):'0:00')+'</span><button class="sw-fin" data-act="finish">Terminar</button></div>';
+  h+='<h2 class="sw-title">'+esc(d.name)+'</h2><p class="sw-meta"><span>'+esc(dateMed(new Date().toISOString()))+'</span><span><b class="num" id="whCount">'+cs.dn+'/'+cs.tot+'</b> series</span></p><div class="sw-bar"><i id="whBar" style="width:'+(cs.tot?Math.round(cs.dn/cs.tot*100):0)+'%"></i></div>';
+  h+='<details class="card warm"><summary>Calentamiento recomendado</summary>'
+    +'<label class="chk"><input type="checkbox" data-w="mov"'+(d.warm.mov?' checked':'')+'><span>5–10 min de movilidad o cardio suave</span></label>'
+    +'<label class="chk"><input type="checkbox" data-w="apx"'+(d.warm.apx?' checked':'')+'><span>Series de aproximación del primer ejercicio (toca el número de serie para marcarla como «A»)</span></label>'
+    +'<label class="chk"><input type="checkbox" data-w="abs"'+(d.warm.abs?' checked':'')+'><span>Abdomen, incorporado de forma progresiva</span></label></details>';
   d.items.forEach(function(it,i){h+=exHTML(it,i,d);});
   h+='<button class="btn block" data-act="open-picker" data-mode="draft">'+ic(I.plus,18)+'Añadir ejercicio</button>';
   h+='<div class="fin" style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn sc" style="flex:1;min-width:180px;min-height:54px;font-size:16px" data-act="finish">Terminar sesión</button>'+cbtn('discard','Descartar','btn','data-act="discard"')+'</div>';
@@ -1161,22 +1181,33 @@ function vHoy(){
   return h;
 }
 function cbtn(key,label,cls,attrs){var a=S.armed===key;return '<button class="'+cls+(a?' armed':'')+'" '+attrs+' data-confirm="'+esc(key)+'">'+(a?'¿Seguro?':label)+'</button>';}
+function prevTxt(ex,p){
+  if(!p||(!p.kg&&!p.reps))return '–';
+  if(isBW(ex)&&!(+p.kg>0))return p.reps+' reps';
+  return fmt(p.kg)+' kg × '+p.reps;
+}
 function exHTML(it,i,d){
   var ex=exOf(it.id),bw=isBW(ex),n=it.sets.filter(function(s){return !s.w;}).length;
-  var h='<section class="ex" data-i="'+i+'"><div class="ex-h"><div class="nm"><h3>'+esc(ex.name)+'</h3><div class="meta-row"><span class="meta">'+n+' series · '+esc(it.reps||'6–12')+(/s$/.test(it.reps||'')?'':' reps')+'</span><button class="rchip" data-act="timer-open" data-ex="'+esc(it.id)+'" aria-label="Cambiar el descanso de este ejercicio">'+ic(I.timer,14)+clock(restFor(ex))+'</button></div></div>'+cbtn('rm:'+i,ic(I.x,18),'ico','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+'</div>';
-  if(it.note)h+='<p class="note">'+esc(it.note)+'</p>';
-  h+='<div class="sh"><span>Serie</span><span>'+(bw?'+ Kg':'Kg')+'</span><span>Reps</span><span></span></div>';
-  var wi=0;
+  var prev=lastSessionSets(it.id);if(!prev&&it.last)prev=[it.last];
+  var h='<section class="ex sx" data-i="'+i+'"><div class="sx-h"><h3 class="sx-n">'+esc(ex.name)+'</h3>'+cbtn('rm:'+i,ic(I.x,18),'ico','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+'</div>';
+  if(it.note)h+='<p class="sx-note">'+esc(it.note)+'</p>';
+  h+='<div class="sh"><span>Serie</span><span>Anterior</span><span>'+(bw?'+ Kg':'Kg')+'</span><span>Reps</span><span>✓</span></div>';
+  var wi=0,rs=restFor(ex);
   it.sets.forEach(function(s,j){
     var ph=phFor(it,j);if(!s.w)wi++;
+    var p=prev&&prev.length?prev[Math.min(j,prev.length-1)]:null;
     h+='<div class="set'+(s.done?' done':'')+(s.w?' warm':'')+'" data-i="'+i+'" data-j="'+j+'">'
       +'<button class="sn" data-act="toggle-w" data-i="'+i+'" data-j="'+j+'" aria-label="'+(s.w?'Serie de aproximación':'Serie '+wi)+'. Toca para cambiar el tipo">'+(s.w?'A':wi)+'</button>'
+      +'<span class="pv">'+esc(prevTxt(ex,p))+'</span>'
       +'<input class="in" inputmode="decimal" autocomplete="off" data-f="kg" value="'+esc(s.kg)+'" placeholder="'+esc(ph.kg)+'" aria-label="'+(bw?'Kilos extra':'Kilos')+', serie '+(j+1)+'">'
       +'<input class="in" inputmode="numeric" autocomplete="off" data-f="reps" value="'+esc(s.reps)+'" placeholder="'+esc(ph.reps)+'" aria-label="Repeticiones, serie '+(j+1)+'">'
       +'<button class="ck" data-act="done" data-i="'+i+'" data-j="'+j+'" aria-pressed="'+(s.done?'true':'false')+'" aria-label="Marcar serie como hecha">'+ic(I.check,22)+'</button></div>';
+    if(j<it.sets.length-1)h+='<button class="rdiv" data-act="timer-open" data-ex="'+esc(it.id)+'" aria-label="Descanso de '+clock(rs)+'. Toca para cambiarlo"><span>'+clock(rs)+'</span></button>';
   });
-  h+='<div class="ex-f"><button class="btn sm" data-act="add-set" data-i="'+i+'">'+ic(I.plus,16)+'Serie</button>'+(it.sets.length>1?'<button class="btn sm" data-act="del-set" data-i="'+i+'" aria-label="Quitar última serie">'+ic(I.minus,16)+'Serie</button>':'')+platesHTML(it,d)+'</div></section>';
-  return h;
+  h+='<button class="addset" data-act="add-set" data-i="'+i+'">+ Añadir serie ('+clock(rs)+')</button>';
+  if(it.sets.length>1)h+='<div class="ex-f"><button class="btn sm" data-act="del-set" data-i="'+i+'" aria-label="Quitar última serie">'+ic(I.minus,16)+'Quitar serie</button>'+platesHTML(it,d)+'</div>';
+  else h+='<div class="ex-f">'+platesHTML(it,d)+'</div>';
+  return h+'</section>';
 }
 
 /* ---------- evidencia y reglas del generador ---------- */
