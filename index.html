@@ -797,7 +797,7 @@ async function boot(){
     var r=await sb.auth.getSession();
     if(r.data&&r.data.session)await onSignedIn(r.data.session.user);
     else{S.mode='auth';renderStatus();render(true);}
-  }catch(e){S.mode='local';S.cfgReady=true;S.sessReady=true;toast('No se pudo conectar con el servidor. Trabajas solo en este dispositivo.');renderStatus();render(true);}
+  }catch(e){S.mode='auth';S.authMsg='No se pudo conectar con el servidor. Revisa tu conexión y recarga la página.';renderStatus();render(true);}
 }
 
 /* ---------- cuenta, amigos y feed ---------- */
@@ -964,8 +964,7 @@ function vAuth(){
    +(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')
    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="'+(m==='up'?'au-up':'au-in')+'">'+(m==='up'?'Crear cuenta':'Entrar')+'</button><button class="btn" data-act="au-magic">Enviarme un enlace por correo</button></div>'
    +(CFG.GOOGLE?'<p style="margin-top:10px"><button class="btn" data-act="au-google">Continuar con Google</button></p>':'')
-   +'<p class="meta" style="margin-top:14px">Tus entrenamientos son privados salvo que los compartas con amigos que tú aceptes.</p></div>'
-   +'<p style="margin-top:12px"><button class="btn sm" data-act="au-guest">Probar sin cuenta (solo en este dispositivo)</button></p>';
+   +'<p class="meta" style="margin-top:14px">Tus entrenamientos son privados salvo que los compartas con amigos que tú aceptes.</p></div>';
   return h;
 }
 function vOnboard(){
@@ -1099,7 +1098,6 @@ function renderNav(){
 function renderStatus(){
   var el=$('#status');
   if(S.mode==='db'){el.innerHTML='<span>'+esc(prof?'@'+prof.username:'Conectado')+'</span> <button class="outb" data-act="au-out" aria-label="Cerrar sesión">Salir</button>';return;}
-  if(S.mode==='local'&&hasBackend()){el.innerHTML='<span>Solo en este dispositivo</span> <button class="outb" style="color:var(--blue)" data-act="au-login">Entrar</button>';return;}
   el.textContent=S.mode==='init'?'Conectando…':S.mode==='auth'?'Sin iniciar sesión':'Guardado solo en este dispositivo';
 }
 
@@ -1800,8 +1798,6 @@ var ACT={
 
   'au-mode':function(b){S.authMode=b.dataset.v;S.authMsg='';render(true);},
   'au-open':function(){S.mode='auth';render(true);},
-  'au-login':function(){S.mode='auth';S.authMsg='';renderStatus();render(true);},
-  'au-guest':function(){S.mode='local';S.cfgReady=true;S.sessReady=true;S.authMsg='';renderStatus();render(true);},
   'au-in':async function(){
     var e=($('#au-email').value||'').trim(),p=$('#au-pass').value||'';
     if(!e||!p){S.authMsg='Escribe tu correo y tu contraseña.';render(true);return;}
