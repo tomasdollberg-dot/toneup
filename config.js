@@ -4,5 +4,5 @@
 window.CF_CONFIG = {
   SUPABASE_URL: "https://xlzpmroccxkgvohfrwvz.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_f2ZOVlSAfV_pJUnJ8YCaig_6djBKMtv", // Clave publicable (pública por diseño)
-  GOOGLE: false           // Pon true si activas el login con Google en Supabase
+  GOOGLE: true            // Pon true si activas el login con Google en Supabase
 };
