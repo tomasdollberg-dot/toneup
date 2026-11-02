@@ -227,6 +227,7 @@ p{margin:0}
 .sw-min{display:block;width:100%;height:30px;border:0;background:none;padding:0}
 .sw-min i{display:block;width:44px;height:5px;border-radius:99px;background:var(--line);margin:0 auto}
 body.focus .hdr,body.focus .nav{display:none}
+body.kb .nav{display:none}
 body.focus .rest{bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 .tbar{position:fixed;left:0;right:0;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:21;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));pointer-events:none}
 .tbar[hidden]{display:none}
@@ -1165,12 +1166,12 @@ function render(force){
   var a=document.activeElement;
   if(!force&&a&&a!==document.body&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)&&VIEW.contains(a)){S.dirty=true;return;}
   S.dirty=false;
-  if(S.mode==='auth'||(S.mode==='db'&&!prof&&S.cfgReady)){VIEW.innerHTML=S.mode==='auth'?vAuth():vOnboard();document.body.className='';$('#nav').innerHTML='';return;}
+  if(S.mode==='auth'||(S.mode==='db'&&!prof&&S.cfgReady)){VIEW.innerHTML=S.mode==='auth'?vAuth():vOnboard();document.body.className=document.body.classList.contains('kb')?'kb':'';$('#nav').innerHTML='';return;}
   if(S.mode==='init'){VIEW.innerHTML='<div class="card empty">Conectando…</div>';$('#nav').innerHTML='';return;}
   var fn={inicio:vInicio,hoy:vHoy,plan:vPlan,ex:vEx,prog:vProg,soc:vSoc,metas:vMetas}[S.tab]||vHoy;
   VIEW.innerHTML=fn();
   var foc=S.tab==='hoy'&&S.draft&&!S.min;
-  document.body.className=((S.tab==='hoy'&&S.draft&&S.draft.kind)?'t-'+S.draft.kind:'')+(foc?' focus':'')+(S.draft&&S.tab!=='hoy'?' has-tbar':'');
+  var kbc=document.body.classList.contains('kb');document.body.className=((S.tab==='hoy'&&S.draft&&S.draft.kind)?'t-'+S.draft.kind:'')+(foc?' focus':'')+(S.draft&&S.tab!=='hoy'?' has-tbar':'')+(kbc?' kb':'');
   renderNav();
   afterRender();
 }
@@ -2314,6 +2315,19 @@ S.cfg=normCfg(ls.get('cf:cfg'));
 S.sessions=(ls.get('cf:sessions')||[]).filter(function(x){return x&&x.date;}).sort(byDateDesc);
 var dr=ls.get('cf:draft');if(dr&&Array.isArray(dr.items))S.draft=dr;
 S.mode='init';rebuildEx();renderStatus();render(true);
+
+/* iPhone: al abrir y cerrar el teclado el menú inferior podía quedarse a media pantalla */
+(function(){
+  var isTxt=function(t){return t&&(t.tagName==='INPUT'&&!/^(checkbox|radio|button|submit|range)$/.test(t.type)||t.tagName==='TEXTAREA'||t.tagName==='SELECT');};
+  var tm=null;
+  function fix(){var x=window.pageXOffset,y=window.pageYOffset;window.scrollTo(x,y+1);window.scrollTo(x,y);}
+  document.addEventListener('focusin',function(e){if(isTxt(e.target)){clearTimeout(tm);document.body.classList.add('kb');}});
+  document.addEventListener('focusout',function(e){
+    if(!isTxt(e.target))return;clearTimeout(tm);
+    tm=setTimeout(function(){var a=document.activeElement;if(isTxt(a))return;document.body.classList.remove('kb');fix();setTimeout(fix,250);},120);
+  });
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',function(){if(!document.body.classList.contains('kb'))fix();});
+})();
 if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
 initP=boot();
 })();
