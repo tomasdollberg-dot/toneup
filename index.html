@@ -127,6 +127,7 @@ button{cursor:pointer}
 .brand{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:800;font-size:19px;letter-spacing:.06em;text-transform:uppercase}
 .plate{width:24px;height:24px;border-radius:50%;background:var(--sc);flex:none;
   -webkit-mask:radial-gradient(circle at center,transparent 0 27%,#000 28%);mask:radial-gradient(circle at center,transparent 0 27%,#000 28%)}
+.outb{font:inherit;font-weight:700;color:var(--red);background:none;border:0;border-left:1px solid var(--line);margin-left:6px;padding:0 0 0 8px;cursor:pointer}
 .status{font-size:12px;color:var(--muted);text-align:right;min-width:0;background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line-soft);border-radius:99px;padding:4px 10px}
 .pagehead{margin:4px 0 16px}
 .pagehead.flex{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -660,13 +661,14 @@ var dlNs=null,rest=null,actx=null;
 
 function normCfg(d){d=d||{};var r=d.rest||{};
   var plans=(Array.isArray(d.plans)?d.plans:[]).filter(function(p){return p&&p.id&&Array.isArray(p.sessions);});
-  if(!plans.length)plans=[{id:'base',name:'Mi plan de 6 sesiones',note:'Tu rutina original: Piernas, Push y Pull, dos veces por semana.',sessions:clone(Array.isArray(d.routine)?d.routine:DEFAULT)}];
+  if(!plans.length)plans=Array.isArray(d.routine)?[{id:'base',name:'Mi plan de 6 sesiones',note:'Tu rutina original: Piernas, Push y Pull, dos veces por semana.',sessions:clone(d.routine)}]:[{id:'mi-plan',name:'Mi plan',note:'Aquí irá tu rutina. Créala con el asistente (Inicio) o añade tus propias sesiones.',sessions:[]}];
   var act=plans.some(function(p){return p.id===d.activePlan;})?d.activePlan:plans[0].id;
-  return {plans:plans,activePlan:act,goalList:Array.isArray(d.goalList)?d.goalList:defaultGoals(d.goals||{}),stageTitles:(d.stageTitles&&typeof d.stageTitles==='object')?d.stageTitles:{},custom:Array.isArray(d.custom)?d.custom:[],body:Array.isArray(d.body)?d.body:[],rest:{c:r.c>0?r.c:180,a:r.a>0?r.a:120},restEx:(d.restEx&&typeof d.restEx==='object')?d.restEx:{},share:d.share!==false};}
+  return {plans:plans,activePlan:act,goalList:Array.isArray(d.goalList)?d.goalList:(d.goals?defaultGoals(d.goals):[]),stageTitles:(d.stageTitles&&typeof d.stageTitles==='object')?d.stageTitles:{},custom:Array.isArray(d.custom)?d.custom:[],body:Array.isArray(d.body)?d.body:[],rest:{c:r.c>0?r.c:180,a:r.a>0?r.a:120},restEx:(d.restEx&&typeof d.restEx==='object')?d.restEx:{},share:d.share!==false};}
 function rebuildEx(){EX=new Map();BASE.concat(S.cfg.custom||[]).forEach(function(e){EX.set(e.id,e);});}
 function exOf(id){return EX.get(id)||{id:id,name:id,grp:'',eq:'',t:'A',sec:'',cue:'',alias:''};}
 function activePlan(){return S.cfg.plans.find(function(p){return p.id===S.cfg.activePlan;})||S.cfg.plans[0];}
 function routine(){return activePlan().sessions;}
+function dropBlank(){var P=S.cfg.plans;if(P.length===1&&P[0].id==='mi-plan'&&!P[0].sessions.length)S.cfg.plans=[];}
 function isBW(ex){return ex.eq==='Peso corporal';}
 function restFor(ex){var o=S.cfg.restEx[ex.id];if(o>0)return o;return ex.t==='C'?S.cfg.rest.c:S.cfg.rest.a;}
 function byDateDesc(a,b){return a.date<b.date?1:a.date>b.date?-1:0;}
@@ -678,13 +680,14 @@ function dateShort(iso){return new Date(iso).toLocaleDateString('es-ES',{day:'nu
 function dateMed(iso){return new Date(iso).toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}
 function weekStart(){var d=new Date();var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x;}
 function weekKeys(){var w=weekStart().toISOString();var s=new Set();S.sessions.forEach(function(x){if(x.date>=w)s.add(x.key);});return s;}
-function nextKey(){var rt=routine();if(!S.sessions.length)return rt[0]&&rt[0].key;var i=rt.findIndex(function(r){return r.key===S.sessions[0].key;});return rt[(i+1)%rt.length].key;}
+function nextKey(){var rt=routine();if(!rt.length)return null;if(!S.sessions.length)return rt[0]&&rt[0].key;var i=rt.findIndex(function(r){return r.key===S.sessions[0].key;});return rt[(i+1)%rt.length].key;}
 function sessionVol(s){var v=0;(s.items||[]).forEach(function(it){(it.sets||[]).forEach(function(x){if(!x.w)v+=(x.kg||0)*(x.reps||0);});});return v;}
 function fmtSet(ex,s){return isBW(ex)?((s.kg>0?'+'+fmt(s.kg)+' kg':'Peso corporal')+' × '+s.reps):(fmt(s.kg)+' kg × '+s.reps);}
 
 /* ---------- historial por ejercicio ---------- */
 function baseSets(id){
   var best=null;
+  if(!S.cfg.plans.some(function(p){return p.id==='base';}))return null;
   DEFAULT.forEach(function(r){r.items.forEach(function(it){if(it.id===id&&it.last){if(!best||epley(it.last.kg,it.last.reps)>epley(best.kg,best.reps)||(best.kg===0&&it.last.kg>0))best=it.last;}});});
   return best;
 }
@@ -1081,6 +1084,7 @@ function updateProgressHead(){
   if(a)a.textContent=c.dn+'/'+c.tot;if(b)b.style.width=(c.tot?Math.round(c.dn/c.tot*100):0)+'%';
 }
 function ringHTML(rt,wk){
+  if(!rt.length)return '';
   var n=rt.length,C=2*Math.PI*26,seg=C/n-4,col={piernas:'red',push:'blue',pull:'green'};
   var s='<svg class="ring" viewBox="0 0 64 64" width="76" height="76" role="img" aria-label="'+wk.size+' de '+n+' sesiones esta semana">';
   rt.forEach(function(r,i){
@@ -1094,7 +1098,9 @@ function renderNav(){
 }
 function renderStatus(){
   var el=$('#status');
-  el.textContent=S.mode==='init'?'Conectando…':S.mode==='auth'?'Sin iniciar sesión':S.mode==='db'?(prof?'@'+prof.username:'Conectado'):'Guardado solo en este dispositivo';
+  if(S.mode==='db'){el.innerHTML='<span>'+esc(prof?'@'+prof.username:'Conectado')+'</span> <button class="outb" data-act="au-out" aria-label="Cerrar sesión">Salir</button>';return;}
+  if(S.mode==='local'&&hasBackend()){el.innerHTML='<span>Solo en este dispositivo</span> <button class="outb" style="color:var(--blue)" data-act="au-login">Entrar</button>';return;}
+  el.textContent=S.mode==='init'?'Conectando…':S.mode==='auth'?'Sin iniciar sesión':'Guardado solo en este dispositivo';
 }
 
 function draftProgress(d){var n=0;d.items.forEach(function(it){it.sets.forEach(function(s){if(s.done)n++;});});return n;}
@@ -1115,6 +1121,7 @@ function vHoy(){
     if(s.prs.length)h+='<div>'+s.prs.map(function(p){return '<span class="pr">'+ic(I.trophy,16)+'Récord en '+esc(p)+'</span>';}).join('')+'</div>';
     h+='<div style="margin-top:10px"><button class="btn sm" data-act="summary-close">Cerrar</button></div></div>';
   }
+  if(!rt.length){h+='<div class="card empty"><h3>Aún no tienes rutina</h3><p class="meta">Todo está en blanco para que lo hagas a tu manera. Puedes crear una rutina con el asistente (según tu objetivo y tu tiempo) o armar tus propias sesiones.</p><p style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="wz-open">Crear mi rutina con el asistente</button><button class="btn" data-act="sess-new">Crear una sesión yo mismo</button></p></div>';return h;}
   h+='<div class="toolrow"><span class="week-t"><b>'+wk.size+'</b> de '+rt.length+' sesiones esta semana</span><button class="btn sm" data-act="timer-open" data-free="1">'+ic(I.timer,16)+'Temporizador</button></div>';
   h+='<div class="chips">'+rt.map(function(r){
     var on=d&&d.key===r.key;
@@ -1385,7 +1392,8 @@ function vPlan(){
     +(S.edit&&pl.id==='base'?cbtn('reset-plan','Restaurar original','btn sm','data-act="plan-reset"'):'')
     +(S.edit&&plans.length>1?cbtn('del-plan','Eliminar plan','btn sm','data-act="plan-del"'):'')
     +'</div></div>';
-  h+='<details class="card rules"><summary>Análisis del plan: series y frecuencia</summary>'+analysisHTML(rt)+'</details>';
+  if(!rt.length)h+='<div class="card empty"><p class="meta">Este plan aún no tiene sesiones.</p><p style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="wz-open">Crear con el asistente</button><button class="btn" data-act="sess-new">Añadir una sesión</button></p></div>';
+  else h+='<details class="card rules"><summary>Análisis del plan: series y frecuencia</summary>'+analysisHTML(rt)+'</details>';
   if(pl.why&&pl.why.length)h+='<details class="card rules"'+(S.whyOpen===pl.id?' open':'')+'><summary>Por qué este plan</summary><ul class="evl">'+pl.why.map(function(w){var e=evById(w.e);return e?evHTML(e,w.x):'';}).join('')+'</ul></details>';
   h+='<details class="card rules"><summary>Evidencia y fuentes de las reglas</summary><ul class="evl">'+EVID.map(function(e){return evHTML(e);}).join('')+'</ul><p class="meta">La evidencia describe promedios de grupos, no a una persona. Muchos estudios son pequeños o de calidad variable. Esto no sustituye el consejo de un profesional sanitario si tienes dolor o una lesión.</p></details>';
   h+='<details class="card rules"><summary>Reglas de tu rutina</summary><ul>'+RULES.map(function(r){return '<li>'+esc(r)+'</li>';}).join('')+'</ul></details>';
@@ -1481,11 +1489,14 @@ function vInicio(){
   if(S.wz)h+=wzHTML();
   else{
     var next=rt.find(function(r){return r.key===sug;})||rt[0];
+    if(!rt.length)h+='<section class="card hero"><h3>¡Bienvenido!</h3><p class="meta">Tu cuaderno está en blanco. Cuéntame tu objetivo y el tiempo que tienes y te preparo una rutina, o explora los ejercicios por zona más abajo.</p><button class="btn primary" data-act="wz-open">Crear mi rutina</button></section>';
+    else{
     h+='<section class="card hero">';
     if(S.draft)h+='<h3>Tienes una sesión en curso</h3><p class="meta">'+esc(S.draft.name||'')+'</p><button class="btn primary" data-act="tab" data-t="hoy">Continuar</button>';
     else if(next)h+='<h3>Hoy te toca: '+esc(next.name)+'</h3><p class="meta">'+esc(next.focus||'')+'</p><button class="btn primary" data-act="start-plan" data-k="'+esc(next.key)+'">Empezar sesión</button>';
     h+='</section>';
     h+='<section class="card hero"><h3>¿No sabes por dónde empezar?</h3><p class="meta">Dime tu objetivo y el tiempo que tienes, y te creo una rutina.</p><button class="btn" data-act="wz-open">Crear mi rutina</button></section>';
+    }
   }
   h+='<h2 class="h2">Ejercicios por zona</h2><div class="tiles">'+Object.keys(SUPER).map(function(g){
     return '<button class="tile" data-act="home-grp" data-g="'+esc(g)+'"><span class="tf">'+(window.CF_TEC?CF_TEC.still(SUPER_PAT[g],1):'')+'</span><b>'+esc(g)+'</b><small>'+grpCount(g)+' ejercicios</small></button>';
@@ -1537,7 +1548,7 @@ function chartSVG(pts){
 }
 function progIds(){
   var ids=new Set();
-  DEFAULT.forEach(function(r){r.items.forEach(function(it){ids.add(it.id);});});
+  if(S.cfg.plans.some(function(p){return p.id==='base';}))DEFAULT.forEach(function(r){r.items.forEach(function(it){ids.add(it.id);});});
   routine().forEach(function(r){r.items.forEach(function(it){ids.add(it.id);});});
   S.sessions.forEach(function(s){(s.items||[]).forEach(function(it){ids.add(it.id);});});
   return Array.from(ids).map(exOf).sort(function(a,b){return a.name.localeCompare(b.name,'es');});
@@ -1619,7 +1630,7 @@ function goalHTML(g){
 function vMetas(){
   var sts=goalStages();
   var h='<div class="pagehead"><p class="eyebrow">'+sts.length+(sts.length===1?' etapa':' etapas')+'</p><h1>Metas</h1></div>';
-  h+='<div class="prio"><b>Prioridad permanente</b><br>Entrenar fuerza sin dolor de cuello y espalda y sin lesionarse.</div>';
+  h+='<div class="prio"><b>Prioridad permanente</b><br>Entrenar sin dolor y sin lesionarte: la técnica va antes que el peso.</div>';
   h+='<div class="toolbar2"><button class="btn sm primary" data-act="g-new">'+ic(I.plus,16)+'Nueva meta</button><button class="btn sm'+(S.goalEdit?' primary':'')+'" data-act="g-edit-mode">'+(S.goalEdit?'Terminar edición':'Editar metas')+'</button><button class="btn sm" data-act="g-to-plan">Crear plan desde mis metas</button></div>';
   if(S.gform)h+=goalFormHTML();
   if(!sts.length)h+='<div class="card empty">Aún no tienes metas. Pulsa «Nueva meta» para crear la primera.</div>';
@@ -1789,6 +1800,7 @@ var ACT={
 
   'au-mode':function(b){S.authMode=b.dataset.v;S.authMsg='';render(true);},
   'au-open':function(){S.mode='auth';render(true);},
+  'au-login':function(){S.mode='auth';S.authMsg='';renderStatus();render(true);},
   'au-guest':function(){S.mode='local';S.cfgReady=true;S.sessReady=true;S.authMsg='';renderStatus();render(true);},
   'au-in':async function(){
     var e=($('#au-email').value||'').trim(),p=$('#au-pass').value||'';
@@ -1895,18 +1907,24 @@ var ACT={
   'gen-tog':function(b){var m=S.gen[b.dataset.k];m[b.dataset.v]=!m[b.dataset.v];render(true);},
   'gen-make':function(){
     if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
-    var p=genPlan(S.gen);S.cfg.plans.push(p);S.cfg.activePlan=p.id;S.whyOpen=p.id;S.gen=null;S.edit=false;
+    var p=genPlan(S.gen);dropBlank();S.cfg.plans.push(p);S.cfg.activePlan=p.id;S.whyOpen=p.id;S.gen=null;S.edit=false;
     saveCfg();render(true);window.scrollTo(0,0);toast('Plan creado y activado.');
   },
   'home-grp':function(b){S.grp=b.dataset.g;S.q='';S.eq='Todos';S.openEx=null;S.tab='ex';render(true);window.scrollTo(0,0);},
   'wz-open':function(){S.wz=wzDefault();render(true);},
+  'sess-new':function(){
+    if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
+    var rt=routine(),n=rt.length+1;
+    rt.push({key:'s'+Date.now().toString(36),name:'Sesión '+n,kind:'push',focus:'',items:[]});
+    S.tab='plan';S.edit=true;saveCfg();render(true);window.scrollTo(0,0);toast('Sesión creada. Añade ejercicios desde Inicio → Ejercicios por zona.');
+  },
   'wz-cancel':function(){S.wz=null;render(true);},
   'wz-set':function(b){var k=b.dataset.k,v=b.dataset.v;S.wz[k]=(k==='days'||k==='mins')?parseInt(v,10):v;render(true);},
   'wz-tog':function(b){S.wz[b.dataset.k]=!S.wz[b.dataset.k];render(true);},
   'wz-make':function(){
     if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
     var r=CF_ASIS.build(S.wz,{exOf:exOf,has:function(id){return EX.has(id);}});
-    S.cfg.plans.push(r.plan);S.cfg.activePlan=r.plan.id;S.whyOpen=r.plan.id;S.wz=null;S.edit=false;S.tab='plan';
+    dropBlank();S.cfg.plans.push(r.plan);S.cfg.activePlan=r.plan.id;S.whyOpen=r.plan.id;S.wz=null;S.edit=false;S.tab='plan';
     saveCfg();render(true);window.scrollTo(0,0);toast('Rutina creada y activada.');
   },
   'rt-open':function(b){S.openRt=S.openRt===b.dataset.id?null:b.dataset.id;render(true);},
@@ -1942,7 +1960,7 @@ var ACT={
     var sess=(d.sessions||[]).map(function(s,i){return {key:pid+'-'+(i+1),name:String(s.name||'Sesión').slice(0,60),kind:['push','pull','piernas'].indexOf(s.kind)>=0?s.kind:'push',focus:String(s.focus||'').slice(0,120),items:(s.items||[]).filter(function(it){return it&&EX.has(it.id);}).map(function(it){return {id:it.id,sets:Math.max(1,Math.min(10,parseInt(it.sets,10)||3)),reps:String(it.reps||'').slice(0,12),last:null,note:String(it.note||'').slice(0,200)};})};}).filter(function(s){return s.items.length;});
     if(!sess.length){toast('Esta rutina no se puede copiar.');return;}
     var nm=(r.name+' (de '+pName(r.owner)+')').slice(0,80);
-    S.cfg.plans.push({id:pid,name:nm,note:'Rutina de '+pName(r.owner)+'. '+String(r.note||'').slice(0,300),sessions:sess,created:new Date().toISOString()});
+    dropBlank();S.cfg.plans.push({id:pid,name:nm,note:'Rutina de '+pName(r.owner)+'. '+String(r.note||'').slice(0,300),sessions:sess,created:new Date().toISOString()});
     S.cfg.activePlan=pid;S.edit=false;S.tab='plan';saveCfg();render(true);window.scrollTo(0,0);toast('Copiada a tus planes y activada.');
   },
   'g-to-plan':function(){S.tab='plan';S.gen=defaultGen();render(true);window.scrollTo(0,0);},
