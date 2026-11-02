@@ -820,6 +820,22 @@ async function deleteSession(id){
   S.sessions=S.sessions.filter(function(x){return x.id!==id;});mirror();
 }
 function rowToSession(r){var x=r.data||{};x.id=r.id;x.date=r.date;x.shared=r.shared;return x;}
+function isGoogle(u){try{return (u.app_metadata&&u.app_metadata.provider==='google')||(u.identities||[]).some(function(i){return i.provider==='google';});}catch(e){return false;}}
+async function autoProfile(user){
+  try{
+    var md=user.user_metadata||{},full=String(md.full_name||md.name||'').trim().slice(0,40);
+    var base=(String(user.email||'').split('@')[0]||full||'atleta').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9_]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+    if(base.length<3)base=(base+'_atleta').slice(0,12);
+    base=base.slice(0,14);
+    for(var i=0;i<6;i++){
+      var u=i===0?base:base+Math.floor(100+Math.random()*9900);
+      var r=await sb.from('profiles').insert({id:user.id,username:u,display_name:full||u});
+      if(!r.error)return {id:user.id,username:u,display_name:full||u};
+      if(r.error.code!=='23505')return null;
+    }
+  }catch(e){}
+  return null;
+}
 async function onSignedIn(user){
   if(me&&me.id===user.id)return;
   me=user;S.mode='db';S.cfgReady=false;S.sessReady=false;S.authMsg='';
@@ -831,6 +847,7 @@ async function onSignedIn(user){
     ]);
     if(a[0].error||a[1].error||a[2].error)throw (a[0].error||a[1].error||a[2].error);
     prof=a[0].data||null;
+    if(!prof&&isGoogle(user))prof=await autoProfile(user);
     S.cfg=normCfg(a[1].data?a[1].data.cfg:{});
     S.sessions=(a[2].data||[]).map(rowToSession).sort(byDateDesc);
     S.cfgReady=true;S.sessReady=true;S.slow=false;
