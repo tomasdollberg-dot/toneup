@@ -1208,7 +1208,7 @@ function vHoy(){
   var key=S.sel&&rt.some(function(r){return r.key===S.sel;})?S.sel:sug,cur=rt.find(function(r){return r.key===key;})||rt[0];
   h+='<section class="card hero k-'+cur.kind+'"><p class="eyebrow" style="margin:0 0 4px">'+(key===sug?'Siguiente sesión':'Sesión elegida')+'</p><h3 class="hero-n">'+esc(cur.name)+'</h3><p class="meta">'+esc(sessInfo(cur))+'</p>'
     +'<ul class="hero-l">'+cur.items.slice(0,8).map(function(it){return '<li><span>'+esc(exOf(it.id).name)+'</span><b class="num">'+it.sets+'×</b></li>';}).join('')+(cur.items.length>8?'<li class="more">y '+(cur.items.length-8)+' más…</li>':'')+'</ul>'
-    +'<button class="btn sc block big" data-act="pick" data-k="'+esc(cur.key)+'">Empezar rutina</button></section>';
+    +'<button class="btn sc block big" data-act="pick" data-k="'+esc(cur.key)+'">Empezar rutina</button><button class="btn block" style="margin-top:8px;min-height:48px" data-act="rt-edit">Editar rutina</button></section>';
   h+='<div class="toolrow"><span class="week-t"><b>'+wk.size+'</b> de '+rt.length+' sesiones esta semana</span><button class="btn sm" data-act="timer-open" data-free="1">'+ic(I.timer,16)+'Temporizador</button></div>';
   if(rt.length>1){
     h+='<p class="eyebrow" style="margin:6px 0 8px">Elegir otra sesión</p><div class="chips">'+rt.map(function(r){
@@ -1952,6 +1952,7 @@ var ACT={
     if(p.mode==='draft'&&S.draft){S.draft.items.push({id:id,last:null,note:'',sets:[emptySet(),emptySet(),emptySet()]});saveDraft();closePicker();render(true);toast('Añadido a la sesión.');}
     else if(p.mode==='plan'){if(editRoutine(function(rt){var r=rt.find(function(x){return x.key===p.key;});if(r)r.items.push({id:id,sets:3,last:null,note:''});})){closePicker();toast('Añadido al plan.');}}
   },
+  'rt-edit':function(){S.tab='plan';S.edit=true;render(true);window.scrollTo(0,0);},
   'plan-edit':function(){S.edit=!S.edit;render(true);},
   'plan-reset':function(){if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}var bp=S.cfg.plans.find(function(p){return p.id==='base';});if(bp)bp.sessions=clone(DEFAULT);saveCfg();render(true);toast('Plan original restaurado.');},
   'start-plan':function(b){S.tab='hoy';var k=b.dataset.k;if(S.draft&&S.draft.key!==k&&draftProgress(S.draft)>0){S.pendingSwitch=k;S.min=true;render(true);}else if(!S.draft||S.draft.key!==k)startDraft(k);else{S.min=false;render(true);}window.scrollTo(0,0);},
