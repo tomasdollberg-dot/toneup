@@ -847,7 +847,7 @@ async function onSignedIn(user){
     ]);
     if(a[0].error||a[1].error||a[2].error)throw (a[0].error||a[1].error||a[2].error);
     prof=a[0].data||null;
-    if(!prof&&isGoogle(user))prof=await autoProfile(user);
+    if(!prof&&isGoogle(user)){prof=await autoProfile(user);if(prof)ls.set('cf:nudge',1);}
     S.cfg=normCfg(a[1].data?a[1].data.cfg:{});
     S.sessions=(a[2].data||[]).map(rowToSession).sort(byDateDesc);
     S.cfgReady=true;S.sessReady=true;S.slow=false;
@@ -1012,6 +1012,8 @@ function friendsHTML(){
 }
 function profileHTML(){
   var h='<div class="card"><div class="fh">'+avatarHTML(prof)+'<div class="fn"><b>'+esc(prof.display_name||prof.username)+'</b><span>@'+esc(prof.username)+' · '+esc(me.email||'')+'</span></div></div>';
+  if(S.pedit){h+='<div class="form" style="margin-top:12px"><label class="field wide">Nombre de usuario<input id="pe-user" type="text" maxlength="20" autocomplete="off" autocapitalize="none" value="'+esc(prof.username)+'"></label><label class="field wide">Nombre para mostrar<input id="pe-name" type="text" maxlength="40" autocomplete="off" value="'+esc(prof.display_name||'')+'"></label></div>'+(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')+'<div class="prow-b" style="margin-top:10px"><button class="btn primary sm" data-act="pe-save">Guardar</button><button class="btn sm" data-act="pe-cancel">Cancelar</button></div><p class="meta" style="margin-top:8px">Entre 3 y 20 caracteres: minúsculas, números y guion bajo.</p>';}
+  else h+='<p style="margin-top:10px"><button class="btn sm" data-act="pe-open">Editar nombre de usuario</button></p>';
   h+='<label class="chk" style="margin-top:12px"><input type="checkbox" data-sh="1"'+(S.cfg.share!==false?' checked':'')+'><span>Compartir mis sesiones nuevas con mis amigos (puedes cambiarlo en cada sesión del historial)</span></label></div>';
   h+='<h2>Copia de seguridad</h2><div class="card"><p class="meta" style="margin:0 0 10px">Guarda todo en un archivo o restaura uno anterior, por ejemplo el que exportes desde la versión de Claude.</p><div class="prow-b"><button class="btn sm" data-act="bk-export">Exportar copia (JSON)</button><button class="btn sm" data-act="bk-import">Importar copia</button></div></div>';
   h+='<div style="margin-top:14px">'+cbtn('out','Cerrar sesión','btn','data-act="au-out"')+'</div>';
@@ -1617,6 +1619,7 @@ function wzHTML(){
 function vInicio(){
   var rt=routine(),sug=nextKey(),nm=prof&&(prof.display_name||prof.username);
   var h='<div class="pagehead"><p class="eyebrow">'+esc(nm?'Hola, '+nm:dateLong())+'</p><h1>Inicio</h1></div>';
+  if(S.mode==='db'&&prof&&ls.get('cf:nudge'))h+='<div class="alert"><span>Te hemos puesto el usuario <b>@'+esc(prof.username)+'</b>. Tus amigos te buscarán con él: ¿quieres cambiarlo?</span><div><button class="btn sm primary" data-act="pf-nudge">Elegir usuario</button><button class="btn sm" data-act="pf-nudge-no">Así está bien</button></div></div>';
   if(S.wz)h+=wzHTML();
   else{
     var next=rt.find(function(r){return r.key===sug;})||rt[0];
@@ -2021,6 +2024,17 @@ var ACT={
     prof={id:me.id,username:u,display_name:n||u};S.authMsg='';render(true);renderStatus();loadSocial();
   },
   'soc-sub':function(b){S.soc.sub=b.dataset.v;render(true);},
+  'pe-open':function(){S.pedit=true;S.authMsg='';render(true);},
+  'pe-cancel':function(){S.pedit=false;S.authMsg='';render(true);},
+  'pe-save':async function(){
+    var u=($('#pe-user').value||'').trim().toLowerCase(),n=($('#pe-name').value||'').trim();
+    if(!/^[a-z0-9_]{3,20}$/.test(u)){S.authMsg='El usuario debe tener de 3 a 20 caracteres: minúsculas, números o guion bajo.';render(true);return;}
+    var r=await sb.from('profiles').update({username:u,display_name:n||u}).eq('id',me.id);
+    if(r.error){S.authMsg=r.error.code==='23505'?'Ese nombre de usuario ya está en uso.':'No se pudo guardar. Inténtalo de nuevo.';render(true);return;}
+    prof.username=u;prof.display_name=n||u;S.pedit=false;S.authMsg='';ls.del('cf:nudge');renderStatus();render(true);toast('Perfil actualizado.');loadSocial();
+  },
+  'pf-nudge':function(){ls.del('cf:nudge');S.tab='soc';S.soc.sub='me';S.pedit=true;S.authMsg='';render(true);window.scrollTo(0,0);},
+  'pf-nudge-no':function(){ls.del('cf:nudge');render(true);},
   'soc-refresh':function(){loadSocial();},
   'rk-set':function(b){S.soc.rk=b.dataset.v;render(true);},
   'cm-open':function(b){S.soc.openC=S.soc.openC===b.dataset.k?null:b.dataset.k;render(true);},
