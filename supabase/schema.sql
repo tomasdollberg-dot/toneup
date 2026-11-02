@@ -1,4 +1,4 @@
--- Cuaderno de Fuerza · esquema de Supabase
+-- Tone Up · esquema de Supabase
 -- Pégalo entero en Supabase > SQL Editor > New query > Run. Se puede ejecutar más de una vez.
 
 create table if not exists public.profiles (

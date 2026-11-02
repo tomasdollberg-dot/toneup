@@ -1,4 +1,4 @@
-# Cuaderno de Fuerza
+# Tone Up
 
 App de gimnasio propia, gratuita y sin dependencias de compilación: un solo `index.html`, un `config.js` y un esquema de base de datos. Incluye rutina de seis sesiones, temporizador de descanso, metas editables, varios planes, generador de planes por objetivos con fuentes citadas y una parte social (amigos, actividad, kudos, comentarios y ranking semanal).
 

@@ -9,8 +9,8 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Cuaderno de Fuerza">
-<title>Cuaderno de Fuerza</title>
+<meta name="apple-mobile-web-app-title" content="Tone Up">
+<title>Tone Up</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 html{-webkit-text-size-adjust:100%}
@@ -465,7 +465,7 @@ body.focus .rest{bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 <body>
 <div class="wrap">
   <div class="hdr">
-    <div class="brand"><span class="plate"></span><span>Cuaderno de Fuerza</span></div>
+    <div class="brand"><span class="plate"></span><span>Tone Up</span></div>
     <div class="status" id="status" role="status"></div>
   </div>
   <div id="view"></div>
@@ -1017,7 +1017,7 @@ function vSoc(){
   return h;
 }
 function vAuth(){
-  var m=S.authMode,h='<div class="pagehead"><p class="eyebrow">Cuaderno de Fuerza</p><h1>'+(m==='up'?'Crear cuenta':'Entrar')+'</h1></div><div class="card auth"><div class="pchips"><button class="gc'+(m!=='up'?' on':'')+'" data-act="au-mode" data-v="in">Ya tengo cuenta</button><button class="gc'+(m==='up'?' on':'')+'" data-act="au-mode" data-v="up">Soy nuevo</button></div>'
+  var m=S.authMode,h='<div class="pagehead"><p class="eyebrow">Tone Up</p><h1>'+(m==='up'?'Crear cuenta':'Entrar')+'</h1></div><div class="card auth"><div class="pchips"><button class="gc'+(m!=='up'?' on':'')+'" data-act="au-mode" data-v="in">Ya tengo cuenta</button><button class="gc'+(m==='up'?' on':'')+'" data-act="au-mode" data-v="up">Soy nuevo</button></div>'
    +'<div class="form"><label class="field wide">Correo electrónico<input id="au-email" type="email" autocomplete="email" inputmode="email"></label><label class="field wide">Contraseña (mínimo 8 caracteres)<input id="au-pass" type="password" autocomplete="'+(m==='up'?'new-password':'current-password')+'"></label></div>'
    +(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')
    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="'+(m==='up'?'au-up':'au-in')+'">'+(m==='up'?'Crear cuenta':'Entrar')+'</button><button class="btn" data-act="au-magic">Enviarme un enlace por correo</button></div>'
@@ -1043,14 +1043,14 @@ async function saveFile(name,data,mime){
   catch(e){toast('No se pudo exportar.');return false;}
 }
 async function exportBackup(){
-  var j=JSON.stringify({app:'cuaderno-de-fuerza',v:1,exported:new Date().toISOString(),cfg:S.cfg,sessions:S.sessions.map(function(s){var c=clone(s);delete c.shared;return c;})});
-  if(await saveFile('cuaderno-de-fuerza-copia.json',j,'application/json'))toast('Copia lista.');
+  var j=JSON.stringify({app:'tone-up',v:1,exported:new Date().toISOString(),cfg:S.cfg,sessions:S.sessions.map(function(s){var c=clone(s);delete c.shared;return c;})});
+  if(await saveFile('tone-up-copia.json',j,'application/json'))toast('Copia lista.');
 }
 async function importBackup(file){
   if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
   try{
     var j=JSON.parse(await file.text());
-    if(!j||j.app!=='cuaderno-de-fuerza'||!Array.isArray(j.sessions))throw new Error('formato');
+    if(!j||(j.app!=='tone-up'&&j.app!=='cuaderno-de-fuerza')||!Array.isArray(j.sessions))throw new Error('formato');
     S.cfg=normCfg(j.cfg);rebuildEx();await saveCfg();
     var list=j.sessions.filter(function(s){return s&&s.id&&s.date&&Array.isArray(s.items);});
     for(var i=0;i<list.length;i++){var s=list[i];if(S.mode==='db'){s.shared=S.cfg.share!==false;var r=await sb.from('sessions').upsert(sessRow(s));if(r.error)throw r.error;}}
@@ -1601,7 +1601,7 @@ function vInicio(){
   if(S.wz)h+=wzHTML();
   else{
     var next=rt.find(function(r){return r.key===sug;})||rt[0];
-    if(!rt.length)h+='<section class="card hero"><h3>¡Bienvenido!</h3><p class="meta">Tu cuaderno está en blanco. Cuéntame tu objetivo y el tiempo que tienes y te preparo una rutina, o explora los ejercicios por zona más abajo.</p><button class="btn primary" data-act="wz-open">Crear mi rutina</button></section>';
+    if(!rt.length)h+='<section class="card hero"><h3>¡Bienvenido!</h3><p class="meta">Tu app está en blanco. Cuéntame tu objetivo y el tiempo que tienes y te preparo una rutina, o explora los ejercicios por zona más abajo.</p><button class="btn primary" data-act="wz-open">Crear mi rutina</button></section>';
     else{
     h+='<section class="card hero">';
     if(S.draft)h+='<h3>Tienes una sesión en curso</h3><p class="meta">'+esc(S.draft.name||'')+'</p><button class="btn primary" data-act="tab" data-t="hoy">Continuar</button>';
@@ -1864,7 +1864,7 @@ async function exportCsv(){
   var rows=[['Fecha','Sesión','Ejercicio','Serie','Tipo','Kg','Reps']];
   S.sessions.slice().reverse().forEach(function(s){(s.items||[]).forEach(function(it){var n=0;(it.sets||[]).forEach(function(x){if(!x.w)n++;rows.push([s.date.slice(0,10),s.name,exOf(it.id).name,x.w?'A':n,x.w?'Aproximación':'Trabajo',String(x.kg).replace('.',','),x.reps]);});});});
   var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(';');}).join('\r\n');
-  if(await saveFile('cuaderno-de-fuerza.csv','﻿'+csv,'text/csv;charset=utf-8'))toast('Archivo listo.');
+  if(await saveFile('tone-up.csv','﻿'+csv,'text/csv;charset=utf-8'))toast('Archivo listo.');
 }
 var ACT={
   tab:function(b){S.tab=b.dataset.t;closePicker();render(true);window.scrollTo(0,0);},
