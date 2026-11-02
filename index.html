@@ -727,6 +727,17 @@ var RULES=[
  'Empieza con pesos conservadores y prioriza la técnica antes que la carga.'
 ];
 
+function rulesFor(pl){
+  if(pl.id==='base')return RULES;
+  var n=pl.sessions.length,mn=function(sec){return String(Math.round(sec/6)/10).replace('.',',');};
+  var r=[n+(n===1?' sesión':' sesiones')+' por semana'+(n?': '+pl.sessions.map(function(x){return x.name;}).join(', ')+'.':'.')];
+  if(pl.gen)r.push('Entre 2 y 5 series por ejercicio, terminando con 1–3 repeticiones en reserva.');
+  if(n>1)r.push('Si no llegas a todas, la semana siguiente continúas con lo que faltó.');
+  r.push('Compuestos primero y aislados después. Músculo grande antes que pequeño.');
+  r.push('Descanso: '+mn(S.cfg.rest.c)+' min en compuestos y '+mn(S.cfg.rest.a)+' min en aislados (puedes cambiarlo en el temporizador).');
+  r.push('Empieza con pesos conservadores y prioriza la técnica antes que la carga.');
+  return r;
+}
 /* ---------- metas por defecto ---------- */
 var STAGE_DEF={1:'Fuerza de tren superior',2:'Composición corporal',3:'Full body y agilidad'};
 var GOALS_DEF=[
@@ -1658,7 +1669,7 @@ function vPlan(){
   else h+='<details class="card rules"><summary>Análisis del plan: series y frecuencia</summary>'+analysisHTML(rt)+'</details>';
   if(pl.why&&pl.why.length)h+='<details class="card rules"'+(S.whyOpen===pl.id?' open':'')+'><summary>Por qué este plan</summary><ul class="evl">'+pl.why.map(function(w){var e=evById(w.e)||WHYX[w.e];return e?evHTML(e,w.x):'';}).join('')+'</ul></details>';
   h+='<details class="card rules"><summary>Evidencia y fuentes de las reglas</summary><ul class="evl">'+EVID.map(function(e){return evHTML(e);}).join('')+'</ul><p class="meta">La evidencia describe promedios de grupos, no a una persona. Muchos estudios son pequeños o de calidad variable. Esto no sustituye el consejo de un profesional sanitario si tienes dolor o una lesión.</p></details>';
-  h+='<details class="card rules"><summary>Reglas de tu rutina</summary><ul>'+RULES.map(function(r){return '<li>'+esc(r)+'</li>';}).join('')+'</ul></details>';
+  h+='<details class="card rules"><summary>Reglas de tu rutina</summary><ul>'+rulesFor(pl).map(function(r){return '<li>'+esc(r)+'</li>';}).join('')+'</ul></details>';
   }
   if(!focusK&&!S.edit&&rt.length&&window.CF_ASIS)h+='<div class="card pers"><b>Personaliza tu rutina</b><p class="meta">Añade ejercicios a todas las sesiones de este plan. Puedes pulsarlo varias veces.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="pl-core">'+ic(I.plus,16)+'Añadir core</button><button class="btn sm" data-act="pl-cardio">'+ic(I.plus,16)+'Añadir cardio</button></div></div>';
   rt.forEach(function(r){
