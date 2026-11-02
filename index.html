@@ -2329,7 +2329,7 @@ S.mode='init';rebuildEx();renderStatus();render(true);
 
 /* iPhone: al abrir y cerrar el teclado el menú inferior podía quedarse a media pantalla */
 (function(){
-  var isTxt=function(t){return t&&(t.tagName==='INPUT'&&!/^(checkbox|radio|button|submit|range)$/.test(t.type)||t.tagName==='TEXTAREA'||t.tagName==='SELECT');};
+  var isTxt=function(t){return t&&(t.tagName==='INPUT'&&!/^(checkbox|radio|button|submit|range)$/.test(t.type)||t.tagName==='TEXTAREA');};
   var tm=null;
   function fix(){var x=window.pageXOffset,y=window.pageYOffset;window.scrollTo(x,y+1);window.scrollTo(x,y);}
   document.addEventListener('focusin',function(e){if(isTxt(e.target)){clearTimeout(tm);document.body.classList.add('kb');}});
@@ -2337,6 +2337,11 @@ S.mode='init';rebuildEx();renderStatus();render(true);
     if(!isTxt(e.target))return;clearTimeout(tm);
     tm=setTimeout(function(){var a=document.activeElement;if(isTxt(a))return;document.body.classList.remove('kb');fix();setTimeout(fix,250);},120);
   });
+  /* red de seguridad: si no hay un campo de texto con foco, el menú siempre se ve */
+  function heal(){if(!isTxt(document.activeElement))document.body.classList.remove('kb');}
+  document.addEventListener('change',function(){setTimeout(heal,50);});
+  document.addEventListener('touchend',function(){setTimeout(heal,300);},{passive:true});
+  document.addEventListener('click',function(){setTimeout(heal,300);});
   if(window.visualViewport)window.visualViewport.addEventListener('resize',function(){if(!document.body.classList.contains('kb'))fix();});
 })();
 if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
