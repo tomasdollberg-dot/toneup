@@ -216,7 +216,12 @@ p{margin:0}
 .sw-bar i{display:block;height:100%;background:var(--green);border-radius:99px;transition:width .25s}
 .sx{padding:12px 10px 12px}
 .sx-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
-.sx-n{margin:0;font-size:19px;font-weight:700;color:var(--blue);font-family:var(--font-body);text-transform:none;letter-spacing:0}
+.sx-nb{border:0;background:none;padding:6px 0;text-align:left;font:inherit;color:inherit;font-weight:inherit;min-height:44px}
+.sx-i{color:var(--blue);margin-left:auto;width:44px;height:44px}
+.sx-i.on{background:color-mix(in srgb,var(--blue) 14%,transparent)}
+.sx-info{margin:0 -4px 10px;padding:10px;border-radius:var(--r-md);background:var(--raised)}
+.sheet.ti{overflow-y:auto}
+.sx-n{margin:0;flex:1;min-width:0;font-size:19px;font-weight:700;color:var(--blue);font-family:var(--font-body);text-transform:none;letter-spacing:0}
 .sx-note{margin:0 -10px 8px;padding:9px 14px;background:color-mix(in srgb,var(--gold) 20%,var(--surface));color:var(--ink);font-size:13.5px}
 .rdiv{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:2px 0;color:var(--blue);font-weight:700;font-size:15px;min-height:34px;font-variant-numeric:tabular-nums}
 .rdiv::before,.rdiv::after{content:"";flex:1;height:3px;border-radius:99px;background:color-mix(in srgb,var(--blue) 22%,transparent)}
@@ -482,6 +487,7 @@ var ls={
 };
 var ic=function(p,s){s=s||20;return '<svg class="ic" width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';};
 var I={
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
   inicio:'<path d="M4 11l8-7 8 7M6 10v10h12V10M10 20v-5h4v5"/>',
   hoy:'<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>',
   plan:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
@@ -1189,7 +1195,8 @@ function prevTxt(ex,p){
 function exHTML(it,i,d){
   var ex=exOf(it.id),bw=isBW(ex),n=it.sets.filter(function(s){return !s.w;}).length;
   var prev=lastSessionSets(it.id);if(!prev&&it.last)prev=[it.last];
-  var h='<section class="ex sx" data-i="'+i+'"><div class="sx-h"><h3 class="sx-n">'+esc(ex.name)+'</h3>'+cbtn('rm:'+i,ic(I.x,18),'ico','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+'</div>';
+  var h='<section class="ex sx" data-i="'+i+'"><div class="sx-h"><h3 class="sx-n"><button class="sx-nb" data-act="ex-pop" data-id="'+esc(it.id)+'" aria-label="Ver cómo se hace: '+esc(ex.name)+'">'+esc(ex.name)+'</button></h3><button class="ico sx-i'+(S.xi===it.id?' on':'')+'" data-act="ex-info" data-id="'+esc(it.id)+'" aria-expanded="'+(S.xi===it.id?'true':'false')+'" aria-label="Información y técnica">'+ic(I.info,22)+'</button>'+cbtn('rm:'+i,ic(I.x,18),'ico','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+'</div>';
+  if(S.xi===it.id)h+='<div class="exd sx-info">'+techBlock(ex)+'</div>';
   if(it.note)h+='<p class="sx-note">'+esc(it.note)+'</p>';
   h+='<div class="sh"><span>Serie</span><span>Anterior</span><span>'+(bw?'+ Kg':'Kg')+'</span><span>Reps</span><span>✓</span></div>';
   var wi=0,rs=restFor(ex);
@@ -1485,11 +1492,29 @@ function exListHTML(){
   });
   return h;
 }
+function techBlock(e){
+  var pk=window.CF_TEC&&CF_TEC.patOf(e),ti=pk&&CF_TEC.info(pk),h='';
+  if(!ti)return e.cue?'<p><b>Consejo:</b> '+esc(e.cue)+'</p>':'<p class="meta">Aún no hay guía visual para este ejercicio.</p>';
+  var fg=CF_TEC.figure(pk);
+  h+='<div class="tec">'+(fg?'<div>'+fg+'<p class="fig-cap">Dibujo esquemático. En rojo, la zona que más trabajas. La postura exacta cambia un poco según la máquina.</p></div>':'')+'<div class="tec-b"><b>Cómo hacerlo</b><ol>'+ti.steps.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol></div></div>'
+    +'<div class="tec2"><div><b>Errores típicos</b><ul>'+ti.err.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div><div class="safe"><b>Para evitar lesiones</b><ul>'+ti.safe.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div></div>'
+    +'<p class="meta">La primera vez usa un peso ligero para aprender el gesto. Si notas dolor punzante o en una articulación, para y consulta con un profesional.</p>';
+  if(e.cue)h+='<p class="meta"><b>Consejo:</b> '+esc(e.cue)+'</p>';
+  return h;
+}
+function exPopup(id){
+  var e=exOf(id);S.picker=null;S.timer=null;
+  $('#picker').innerHTML='<div class="sheet-bg" data-act="pk-close"></div><div class="sheet ti" role="dialog" aria-label="Cómo hacer '+esc(e.name)+'"><div class="sheet-in"><div class="grab"></div><div class="sheet-h"><strong>'+esc(e.name)+'</strong><button class="ico" data-act="pk-close" aria-label="Cerrar">'+ic(I.x,20)+'</button></div><div class="exd">'+techBlock(e)+'</div></div></div>';
+  if(window.CF_TEC){CF_TEC.stop();CF_TEC.start($('#picker .tec svg.fig'));}
+}
 function exDetail(e){
   var hist=histFor(e.id),bw=isBW(e),h='<div class="exd">';
   var pk=window.CF_TEC&&CF_TEC.patOf(e),ti=pk&&CF_TEC.info(pk);
   if(e.cue)h+='<p><b>Consejo:</b> '+esc(e.cue)+'</p>';
   if(ti){
+    h+=techBlock(e);
+  }
+  if(false){
     var fg=CF_TEC.figure(pk);
     h+='<div class="tec">'+(fg?'<div>'+fg+'<p class="fig-cap">Dibujo esquemático. En rojo, la zona que más trabajas. La postura exacta cambia un poco según la máquina.</p></div>':'')+'<div class="tec-b"><b>Cómo hacerlo</b><ol>'+ti.steps.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol></div></div>'
       +'<div class="tec2"><div><b>Errores típicos</b><ul>'+ti.err.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div><div class="safe"><b>Para evitar lesiones</b><ul>'+ti.safe.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div></div>'
@@ -1700,7 +1725,7 @@ function openPicker(mode,key){
   S.picker={mode:mode,key:key};S.pq='';
   $('#picker').innerHTML='<div class="sheet-bg" data-act="pk-close"></div><div class="sheet" role="dialog" aria-label="Añadir ejercicio"><div class="sheet-in"><div class="sheet-h"><strong>Añadir ejercicio</strong><button class="ico" data-act="pk-close" aria-label="Cerrar">'+ic(I.x,20)+'</button></div><div class="search"><input id="pq" type="search" placeholder="Buscar ejercicio…" autocomplete="off" aria-label="Buscar ejercicio"></div><div id="plist">'+pickerListHTML()+'</div></div></div>';
 }
-function closePicker(){S.picker=null;S.timer=null;$('#picker').innerHTML='';}
+function closePicker(){S.picker=null;S.timer=null;$('#picker').innerHTML='';afterRender();}
 
 /* ---------- temporizador de descanso ---------- */
 function clampSec(v){return Math.max(10,Math.min(900,Math.round(v)));}
@@ -1812,6 +1837,8 @@ var ACT={
   },
   'open-picker':function(b){openPicker(b.dataset.mode,b.dataset.k);},
   'pk-close':function(){closePicker();},
+  'ex-pop':function(b){exPopup(b.dataset.id);},
+  'ex-info':function(b){S.xi=S.xi===b.dataset.id?null:b.dataset.id;render(true);},
   'pk-add':function(b){
     var id=b.dataset.id,p=S.picker;if(!p)return;
     if(p.mode==='draft'&&S.draft){S.draft.items.push({id:id,last:null,note:'',sets:[emptySet(),emptySet(),emptySet()]});saveDraft();closePicker();render(true);toast('Añadido a la sesión.');}
