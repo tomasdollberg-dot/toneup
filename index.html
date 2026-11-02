@@ -820,22 +820,6 @@ async function deleteSession(id){
   S.sessions=S.sessions.filter(function(x){return x.id!==id;});mirror();
 }
 function rowToSession(r){var x=r.data||{};x.id=r.id;x.date=r.date;x.shared=r.shared;return x;}
-function isGoogle(u){try{return (u.app_metadata&&u.app_metadata.provider==='google')||(u.identities||[]).some(function(i){return i.provider==='google';});}catch(e){return false;}}
-async function autoProfile(user){
-  try{
-    var md=user.user_metadata||{},full=String(md.full_name||md.name||'').trim().slice(0,40);
-    var base=(String(user.email||'').split('@')[0]||full||'atleta').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9_]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
-    if(base.length<3)base=(base+'_atleta').slice(0,12);
-    base=base.slice(0,14);
-    for(var i=0;i<6;i++){
-      var u=i===0?base:base+Math.floor(100+Math.random()*9900);
-      var r=await sb.from('profiles').insert({id:user.id,username:u,display_name:full||u});
-      if(!r.error)return {id:user.id,username:u,display_name:full||u};
-      if(r.error.code!=='23505')return null;
-    }
-  }catch(e){}
-  return null;
-}
 async function onSignedIn(user){
   if(me&&me.id===user.id)return;
   me=user;S.mode='db';S.cfgReady=false;S.sessReady=false;S.authMsg='';
@@ -847,8 +831,7 @@ async function onSignedIn(user){
     ]);
     if(a[0].error||a[1].error||a[2].error)throw (a[0].error||a[1].error||a[2].error);
     prof=a[0].data||null;
-    if(!prof&&isGoogle(user)){prof=await autoProfile(user);if(prof)ls.set('cf:nudge',1);}
-    S.cfg=normCfg(a[1].data?a[1].data.cfg:{});
+        S.cfg=normCfg(a[1].data?a[1].data.cfg:{});
     S.sessions=(a[2].data||[]).map(rowToSession).sort(byDateDesc);
     S.cfgReady=true;S.sessReady=true;S.slow=false;
   }catch(e){S.slow=true;toast('No se pudieron cargar tus datos. Revisa la conexión y recarga.');}
@@ -1045,8 +1028,9 @@ function vAuth(){
    +'<p class="meta" style="margin-top:14px">Tus entrenamientos son privados salvo que los compartas con amigos que tú aceptes.</p></div>';
   return h;
 }
+function gName(){try{var m=(me&&me.user_metadata)||{};return String(m.full_name||m.name||'').trim().slice(0,40);}catch(e){return '';}}
 function vOnboard(){
-  return '<div class="pagehead"><p class="eyebrow">Último paso</p><h1>Tu perfil</h1></div><div class="card"><p class="meta" style="margin:0 0 10px">Tus amigos te encontrarán por tu nombre de usuario.</p><div class="form"><label class="field wide">Nombre de usuario<input id="pf-user" type="text" maxlength="20" autocomplete="off" autocapitalize="none" placeholder="Ej.: tomas_fuerza"></label><label class="field wide">Nombre para mostrar<input id="pf-name" type="text" maxlength="40" autocomplete="off" placeholder="Ej.: Tomás"></label></div>'+(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')+'<button class="btn primary" data-act="pf-save">Guardar perfil</button><p class="meta" style="margin-top:10px">Entre 3 y 20 caracteres: minúsculas, números y guion bajo.</p></div><p style="margin-top:12px">'+cbtn('out','Cerrar sesión','btn sm','data-act="au-out"')+'</p>';
+  return '<div class="pagehead"><p class="eyebrow">Último paso</p><h1>Tu perfil</h1></div><div class="card"><p class="meta" style="margin:0 0 10px">Tus amigos te encontrarán por tu nombre de usuario.</p><div class="form"><label class="field wide">Nombre de usuario<input id="pf-user" type="text" maxlength="20" autocomplete="off" autocapitalize="none" placeholder="Ej.: tomas_fuerza"></label><label class="field wide">Nombre para mostrar<input id="pf-name" type="text" maxlength="40" autocomplete="off" placeholder="Ej.: Tomás" value="'+esc(gName())+'"></label></div>'+(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')+'<button class="btn primary" data-act="pf-save">Guardar perfil</button><p class="meta" style="margin-top:10px">Entre 3 y 20 caracteres: minúsculas, números y guion bajo.</p></div><p style="margin-top:12px">'+cbtn('out','Cerrar sesión','btn sm','data-act="au-out"')+'</p>';
 }
 function authErr(e){
   var m=(e&&e.message||'').toLowerCase();
@@ -1619,7 +1603,6 @@ function wzHTML(){
 function vInicio(){
   var rt=routine(),sug=nextKey(),nm=prof&&(prof.display_name||prof.username);
   var h='<div class="pagehead"><p class="eyebrow">'+esc(nm?'Hola, '+nm:dateLong())+'</p><h1>Inicio</h1></div>';
-  if(S.mode==='db'&&prof&&ls.get('cf:nudge'))h+='<div class="alert"><span>Te hemos puesto el usuario <b>@'+esc(prof.username)+'</b>. Tus amigos te buscarán con él: ¿quieres cambiarlo?</span><div><button class="btn sm primary" data-act="pf-nudge">Elegir usuario</button><button class="btn sm" data-act="pf-nudge-no">Así está bien</button></div></div>';
   if(S.wz)h+=wzHTML();
   else{
     var next=rt.find(function(r){return r.key===sug;})||rt[0];
@@ -2031,10 +2014,8 @@ var ACT={
     if(!/^[a-z0-9_]{3,20}$/.test(u)){S.authMsg='El usuario debe tener de 3 a 20 caracteres: minúsculas, números o guion bajo.';render(true);return;}
     var r=await sb.from('profiles').update({username:u,display_name:n||u}).eq('id',me.id);
     if(r.error){S.authMsg=r.error.code==='23505'?'Ese nombre de usuario ya está en uso.':'No se pudo guardar. Inténtalo de nuevo.';render(true);return;}
-    prof.username=u;prof.display_name=n||u;S.pedit=false;S.authMsg='';ls.del('cf:nudge');renderStatus();render(true);toast('Perfil actualizado.');loadSocial();
+    prof.username=u;prof.display_name=n||u;S.pedit=false;S.authMsg='';renderStatus();render(true);toast('Perfil actualizado.');loadSocial();
   },
-  'pf-nudge':function(){ls.del('cf:nudge');S.tab='soc';S.soc.sub='me';S.pedit=true;S.authMsg='';render(true);window.scrollTo(0,0);},
-  'pf-nudge-no':function(){ls.del('cf:nudge');render(true);},
   'soc-refresh':function(){loadSocial();},
   'rk-set':function(b){S.soc.rk=b.dataset.v;render(true);},
   'cm-open':function(b){S.soc.openC=S.soc.openC===b.dataset.k?null:b.dataset.k;render(true);},
