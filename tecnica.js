@@ -95,6 +95,7 @@ function draw(pa,pb,t,pat){
     if(w==='bar')h+='<circle cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="8.5" fill="var(--muted,#8a8f98)"/><circle cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="5.2" fill="var(--surface,#fff)" opacity=".9"/><circle cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="1.8" fill="var(--muted,#8a8f98)"/>';
     else h+='<rect x="'+(c[0]-7).toFixed(1)+'" y="'+(c[1]-3).toFixed(1)+'" width="14" height="6" rx="2.2" fill="var(--muted,#8a8f98)"/><rect x="'+(c[0]-9).toFixed(1)+'" y="'+(c[1]-5).toFixed(1)+'" width="4" height="10" rx="1.6" fill="var(--ink,#111)"/><rect x="'+(c[0]+5).toFixed(1)+'" y="'+(c[1]-5).toFixed(1)+'" width="4" height="10" rx="1.6" fill="var(--ink,#111)"/>';
   }
+  if(w==='dbv'){var c2=g.arm.e;h+='<rect x="'+(c2[0]-3).toFixed(1)+'" y="'+(c2[1]-7).toFixed(1)+'" width="6" height="14" rx="2.2" fill="var(--muted,#8a8f98)"/><rect x="'+(c2[0]-5).toFixed(1)+'" y="'+(c2[1]-9).toFixed(1)+'" width="10" height="4" rx="1.6" fill="var(--ink,#111)"/><rect x="'+(c2[0]-5).toFixed(1)+'" y="'+(c2[1]+5).toFixed(1)+'" width="10" height="4" rx="1.6" fill="var(--ink,#111)"/>';}
   if(w==='bar-s'){h+='<circle cx="'+(g.S[0]-1).toFixed(1)+'" cy="'+(g.S[1]-4).toFixed(1)+'" r="8.5" fill="var(--muted,#8a8f98)"/><circle cx="'+(g.S[0]-1).toFixed(1)+'" cy="'+(g.S[1]-4).toFixed(1)+'" r="5" fill="var(--surface,#fff)" opacity=".9"/>';}
   if(w==='cable'){h+='<line x1="'+g.arm.e[0].toFixed(1)+'" y1="'+g.arm.e[1].toFixed(1)+'" x2="'+(pat.cx||180)+'" y2="'+(pat.cy||8)+'" stroke="'+acc+'" stroke-width="1.6" stroke-dasharray="3 3"/>';}
   if(pat.sc)h+='</g>';
@@ -118,7 +119,7 @@ P.inclinado={w:'bar',props:[['rect',52,100,60,8],['post',60,108]],A:{h:[108,96],
 P.aperturas={w:'db',props:[['bench',34,96,86,8]],A:{h:[116,92],t:-90,foot:[138,FLOOR-2],hand:[76,54],ad:-1},B:{h:[116,92],t:-90,foot:[138,FLOOR-2],hand:[70,86],ad:-1}};
 P.cruce={w:'cable',cx:178,cy:6,A:{h:[96,62],t:12,foot:[104,FLOOR-2],foot2:[88,FLOOR-2],hand:[132,42],ad:1},B:{h:[96,62],t:12,foot:[104,FLOOR-2],foot2:[88,FLOOR-2],hand:[142,70],ad:1}};
 P.flexion={w:null,A:{s:[54,78],h:[93,92],foot:[150,FLOOR-2],hand:[54,FLOOR-2],ad:-1},B:{s:[54,106],h:[93,110],foot:[150,FLOOR-2],hand:[54,FLOOR-2],ad:-1}};
-P.fondos={w:null,nofloor:1,props:[['bar',70,70,150,70]],A:{h:[100,100],t:8,leg:[8,-35],hand:[104,78],ad:-1},B:{h:[100,126],t:22,leg:[8,-35],hand:[104,78],ad:-1}};
+P.fondos={w:null,nofloor:1,sc:.82,props:[['bar',70,70,150,70]],A:{h:[100,100],t:8,leg:[8,-35],hand:[104,78],ad:-1},B:{h:[100,126],t:22,leg:[8,-35],hand:[104,78],ad:-1}};
 P.fondos.A={h:[100,66],t:8,leg:[10,-60],hand:[104,70],ad:-1};P.fondos.B={h:[98,88],t:20,leg:[10,-60],hand:[104,70],ad:-1};
 P.pressh={w:'db',props:[['rect',68,92,12,32]],A:{h:[86,96],t:0,leg:[88,0],hand:[100,56],ad:-1},B:{h:[86,96],t:0,leg:[88,0],hand:[96,2],ad:-1}};
 P.lateral={w:'db',A:{h:[100,62],t:3,foot:fl,arm:[4,6]},B:{h:[100,62],t:3,foot:fl,arm:[78,82]}};
@@ -221,8 +222,10 @@ var SMALLTXT={
  pecho:'Pecho: baja los hombros y junta los omóplatos antes de empezar.',
  espalda:'Espalda: piensa en tirar con los codos, no con las manos.'
 };
+var VM={};
 function patOf(ex){
   var id=(ex&&ex.id)||'';
+  if(VM[id])return id;
   if(FIX[id])return FIX[id];
   for(var i=0;i<MAP.length;i++)if(MAP[i][0].test(id))return MAP[i][1];
   return null;
@@ -242,7 +245,7 @@ function start(svg){
   var pat=P[svg.getAttribute('data-pat')];if(!pat)return;
   var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(reduce){svg.innerHTML=draw(pat.A,pat.B,1,pat);return;}
-  var t0=0,period=3200;
+  var t0=0,period=pat.period||3200;
   cur=svg;
   function frame(ts){
     if(!cur||!document.body.contains(svg)){stop();return;}
@@ -260,5 +263,15 @@ var HL={thigh:'sentadilla goblet prensa zancada extensionpierna bisagra puente p
  torso:'press inclinado aperturas cruce flexion fondos jalon dominada remo remopolea pullover hiper plancha crunch colgado',
  shoulder:'pressh lateral frontal pajaros facepull encoger',upperarm:'curl triceps skull fondos press inclinado flexion',forearm:'granjero'};
 Object.keys(HL).forEach(function(tag){HL[tag].split(' ').forEach(function(k){if(P[k])(P[k].hl=P[k].hl||[]).push(tag);});});
-window.CF_TEC={still:still,patOf:patOf,info:info,figure:figure,start:start,stop:stop,keys:Object.keys(P)};
+function def(id,base,o,t){
+  var b=P[base];if(!b)return;
+  var p=JSON.parse(JSON.stringify(b));o=o||{};
+  Object.keys(o).forEach(function(k){p[k]=o[k];});
+  P[id]=p;VM[id]=1;
+  var tb=T[base]||{},tt=t||{};
+  T[id]={n:tt.n||tb.n,steps:tt.steps||tb.steps,err:tt.err||tb.err,safe:tt.safe||tb.safe};
+  if(CF.keys.indexOf(id)<0)CF.keys.push(id);
+}
+var CF={still:still,patOf:patOf,info:info,figure:figure,start:start,stop:stop,keys:Object.keys(P),def:def,P:P,FLOOR:FLOOR};
+window.CF_TEC=CF;
 })();
