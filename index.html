@@ -233,6 +233,7 @@ p{margin:0}
 body.focus .hdr,body.focus .nav{display:none}
 body.kb .nav{display:none}
 .nav-in:empty{display:none}
+.newp{display:inline-block;font-style:normal;font-size:10px;font-weight:700;padding:1px 7px;border-radius:9px;background:#D32F2F;color:#fff;vertical-align:middle;margin-left:4px}.frh{display:flex;align-items:center;gap:10px}.fr:has(.frh){flex-direction:column;align-items:stretch;gap:8px}
 .pts summary{cursor:pointer;list-style:none}.pts ul{margin:8px 0 6px;padding-left:18px;line-height:1.5}.ptot{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.ptot .num{font-size:34px;line-height:1}
 body.focus .rest{bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 .tbar{position:fixed;left:0;right:0;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:21;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));pointer-events:none}
@@ -531,6 +532,7 @@ var I={
   prog:'<path d="M4 19V5M4 19h16M8 15l4-5 3 3 5-7"/>',
   soc:'<circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5M16 6a3 3 0 0 1 0 6M18 14c2 .5 3 2.4 3 5"/>',
   metas:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  avisos:'<path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4"/>',
   check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   x:'<path d="M6 6l12 12M18 6L6 18"/>',
@@ -1010,8 +1012,9 @@ async function fetchNews(){
 function newsUnseen(){var soc=S.soc;if(!soc||!soc.newsOk)return [];var seen=ls.get(seenKey())||'';return soc.news.filter(function(n){return n.at>seen&&soc.newsView.every(function(v){return v.k!==n.k;});});}
 function newsCount(){return S.mode==='db'&&S.soc?newsUnseen().length:0;}
 function ackNews(){ /* el usuario está mirando Actividad: lo nuevo pasa a la tarjeta y deja de contar */
-  var soc=S.soc;if(!soc||S.tab!=='soc'||soc.sub!=='feed')return;
+  var soc=S.soc;if(!soc)return;var av=S.tab==='avisos';if(!av&&(S.tab!=='soc'||soc.sub!=='feed'))return;
   var u=newsUnseen();if(!u.length)return;
+  if(av){var m2=u.reduce(function(m,n){return n.at>m?n.at:m;},ls.get(seenKey())||'');ls.set(seenKey(),m2);return;}
   soc.newsView=soc.newsView.concat(u).sort(function(a,b){return a.at<b.at?1:a.at>b.at?-1:0;});
   var mx=u.reduce(function(m,n){return n.at>m?n.at:m;},ls.get(seenKey())||'');ls.set(seenKey(),mx);
 }
@@ -1160,6 +1163,24 @@ function profileHTML(){
   h+='<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="onb-replay">Ver el tutorial</button>'+cbtn('out','Cerrar sesión','btn','data-act="au-out"')+'</div>';
   return h;
 }
+function vAvisos(){
+  var h='<div class="pagehead"><p class="eyebrow">Lo que ha pasado</p><h1>Avisos</h1></div>',soc=S.soc;
+  if(S.mode!=='db'||!soc)return h+'<div class="card empty">Inicia sesión para recibir avisos de tus amigos.</div>';
+  if(soc.avPrev==null)soc.avPrev=ls.get(seenKey())||'';
+  var prev=soc.avPrev;ackNews();
+  if(!soc.loaded)return h+'<div class="card empty">Cargando…</div>';
+  var any=false;
+  if(soc.inc.length){
+    any=true;
+    h+='<h2>Solicitudes de amistad</h2><div class="card">'+soc.inc.map(function(id){var p=pOf(id)||{};return '<div class="fr"><div class="frh">'+avatarHTML(p)+'<span class="rkname">'+esc(pName(id))+'<small>@'+esc(p.username||'')+' quiere ser tu amigo</small></span></div><div class="prow-b"><button class="btn sm primary" data-act="fr-ok" data-id="'+esc(id)+'">Aceptar</button><button class="btn sm" data-act="fr-no" data-id="'+esc(id)+'">Rechazar</button></div></div>';}).join('')+'</div>';
+  }
+  if(soc.news.length){
+    any=true;
+    h+='<h2>Actividad</h2><div class="card newsc">'+soc.news.slice(0,40).map(function(n){return '<div class="newsr"><span>'+avatarHTML(pOf(n.u))+'</span><span class="newst">'+newsText(n)+(n.at>prev?' <i class="newp">Nuevo</i>':'')+'<small>'+esc(dateShort(n.at))+'</small></span></div>';}).join('')+'</div>';
+  }
+  if(!any)h+='<div class="card empty">Todavía no tienes avisos. Aquí verás las solicitudes de amistad, los kudos y comentarios en tus sesiones y los me gusta en tus rutinas.</div>';
+  return h;
+}
 function vSoc(){
   var h='<div class="pagehead"><p class="eyebrow">Tu grupo</p><h1>Amigos</h1></div>';
   if(S.mode!=='db'){
@@ -1290,7 +1311,7 @@ function render(force){
   if(S.mode==='init'){VIEW.innerHTML='<div class="card empty">Conectando…</div>';$('#nav').innerHTML='';return;}
   if(S.mode==='db'&&!S.onb&&needsOnb())S.onb=onbInit();
   if(S.onb){var tb=$('#tbar');if(tb)tb.hidden=true;VIEW.innerHTML=vOnb();document.body.className=document.body.classList.contains('kb')?'kb':'';$('#nav').innerHTML='';return;}
-  var fn={inicio:vInicio,hoy:vHoy,plan:vPlan,ex:vEx,prog:vProg,soc:vSoc,metas:vMetas}[S.tab]||vHoy;
+  var fn={inicio:vInicio,hoy:vHoy,plan:vPlan,ex:vEx,prog:vProg,soc:vSoc,metas:vMetas,avisos:vAvisos}[S.tab]||vHoy;
   VIEW.innerHTML=fn();
   var foc=S.tab==='hoy'&&S.draft&&!S.min;
   var kbc=document.body.classList.contains('kb');document.body.className=((S.tab==='hoy'&&S.draft&&S.draft.kind)?'t-'+S.draft.kind:'')+(foc?' focus':'')+(S.draft&&S.tab!=='hoy'?' has-tbar':'')+(kbc?' kb':'');
@@ -1325,7 +1346,8 @@ function renderBar(){
 function renderNav(){
   renderBar();
   var T=[['inicio','Inicio'],['hoy','Entrenar'],['plan','Plan'],['prog','Progreso'],['soc','Amigos'],['metas','Metas']];
-  $('#nav').innerHTML=T.map(function(t){return '<button class="tab" data-act="tab" data-t="'+t[0]+'"'+((S.tab===t[0]||(t[0]==='inicio'&&S.tab==='ex'))?' aria-current="page"':'')+'>'+ic(I[t[0]],22)+(t[0]==='soc'&&S.mode==='db'&&S.soc&&(S.soc.inc.length+newsCount())?'<i class="bdg" aria-label="'+(S.soc.inc.length+newsCount())+' avisos nuevos">'+(S.soc.inc.length+newsCount())+'</i>':'')+'<span>'+t[1]+'</span></button>';}).join('');
+  var dbm=S.mode==='db'&&S.soc;if(dbm)T.push(['avisos','Avisos']);$('#nav').style.gridTemplateColumns='repeat('+T.length+',minmax(0,1fr))';
+  $('#nav').innerHTML=T.map(function(t){return '<button class="tab" data-act="tab" data-t="'+t[0]+'"'+((S.tab===t[0]||(t[0]==='inicio'&&S.tab==='ex'))?' aria-current="page"':'')+'>'+ic(I[t[0]],22)+(t[0]==='avisos'&&(S.soc.inc.length+newsCount())?'<i class="bdg" aria-label="'+(S.soc.inc.length+newsCount())+' avisos nuevos">'+(S.soc.inc.length+newsCount())+'</i>':'')+'<span>'+t[1]+'</span></button>';}).join('');
   setAppBadge();
 }
 function setAppBadge(){try{var n=(S.mode==='db'&&S.soc)?S.soc.inc.length+newsCount():0;if(navigator.setAppBadge){if(n)navigator.setAppBadge(n);else navigator.clearAppBadge();}}catch(e){}}
@@ -1340,7 +1362,7 @@ async function pollReqs(){
       if(fresh0.length&&soc.newsOk&&prevKeys.length+fresh0.length>=0){
         var f0=fresh0[0];msg=fresh0.length>1?'Tienes '+fresh0.length+' novedades en tu actividad':(f0.t==='c'?'@'+((pOf(f0.u)||{}).username||'alguien')+' ha comentado tu sesión':f0.t==='k'?'@'+((pOf(f0.u)||{}).username||'alguien')+' ha dado kudos a tu sesión':'@'+((pOf(f0.u)||{}).username||'alguien')+' ha dado me gusta a tu rutina');
       }
-      if(newsCount()!==before||(S.tab==='soc'&&S.soc.sub==='feed'&&newsUnseen().length))changed=true;
+      if(newsCount()!==before||((S.tab==='avisos'||(S.tab==='soc'&&S.soc.sub==='feed'))&&newsUnseen().length))changed=true;
     }
     var fr=await sb.from('friendships').select('requester,addressee,status');
     if(!fr.error){
@@ -2195,7 +2217,7 @@ async function exportCsv(){
   if(await saveFile('tone-up.csv','﻿'+csv,'text/csv;charset=utf-8'))toast('Archivo listo.');
 }
 var ACT={
-  tab:function(b){if(S.soc&&b.dataset.t!=='soc')S.soc.newsView=[];S.tab=b.dataset.t;S.editKey=null;closePicker();render(true);window.scrollTo(0,0);},
+  tab:function(b){if(S.soc){S.soc.avPrev=null;if(b.dataset.t!=='soc')S.soc.newsView=[];}S.tab=b.dataset.t;S.editKey=null;closePicker();render(true);window.scrollTo(0,0);},
   pick:function(b){var k=b.dataset.k;if(S.draft&&S.draft.key===k){S.min=false;render(true);return;}if(S.draft&&draftProgress(S.draft)>0){S.pendingSwitch=k;S.min=true;render(true);return;}startDraft(k);},
   'switch-yes':function(){startDraft(S.pendingSwitch);},
   'switch-no':function(){S.pendingSwitch=null;S.min=false;render(true);},
