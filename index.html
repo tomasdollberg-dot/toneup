@@ -1355,10 +1355,11 @@ function updatePlates(i){
 
 /* ---------- vistas ---------- */
 var VIEW=$('#view');
+function editBegin(){if(S.editSnap||!canEditCfg())return;S.editSnap=JSON.stringify({p:S.cfg.plans,a:S.cfg.activePlan});}
 function render(force){
   var a=document.activeElement;
   if(!force&&a&&a!==document.body&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)&&VIEW.contains(a)){S.dirty=true;return;}
-  S.dirty=false;
+  S.dirty=false;if(!S.edit)S.editSnap=null;else editBegin();
   if(S.mode==='auth'||(S.mode==='db'&&!prof&&S.cfgReady)){VIEW.innerHTML=S.mode==='auth'?vAuth():vOnboard();document.body.className=document.body.classList.contains('kb')?'kb':'';$('#nav').innerHTML='';return;}
   if(S.mode==='init'){VIEW.innerHTML='<div class="card empty">Conectando…</div>';$('#nav').innerHTML='';return;}
   if(S.mode==='db'&&!S.onb&&needsOnb())S.onb=onbInit();
@@ -1761,7 +1762,7 @@ function vPlan(){
   if(S.gen)h+=genFormHTML();
   h+='<div class="card pinfo">'+(S.edit?'<label class="field wide">Nombre del plan<input id="pname" type="text" value="'+esc(pl.name)+'" autocomplete="off"></label>':'<div class="pi-n">'+esc(pl.name)+'</div>')+'<p class="meta">'+esc(pl.note||'')+'</p><div class="prow-b">'
     +'<button class="btn sm'+(S.edit?' primary':'')+'" data-act="plan-edit">'+(S.edit?'Terminar edición':'Editar plan')+'</button>'
-    +(S.edit?'<button class="btn sm" data-act="plan-rename">Guardar nombre</button>':'')
+    +(S.edit?'<button class="btn sm" data-act="plan-rename">Guardar nombre</button>'+cbtn('plan-cancel','Cancelar cambios','btn sm','data-act="plan-cancel"'):'')
     +'<button class="btn sm" data-act="plan-dup">Duplicar</button>'
     +(S.mode==='db'&&S.soc.rtOk!==false?'<button class="btn sm" data-act="rt-share">'+(S.soc.routines.some(function(r){return me&&r.owner===me.id&&r.data&&r.data.pid===pl.id;})?'Actualizar rutina compartida':'Compartir con amigos')+'</button>':'')
     +(S.edit&&pl.id==='base'?cbtn('reset-plan','Restaurar original','btn sm','data-act="plan-reset"'):'')
@@ -2354,6 +2355,10 @@ var ACT={
     else if(p.mode==='plan'){if(editRoutine(function(rt){var r=rt.find(function(x){return x.key===p.key;});if(r)r.items.push({id:id,sets:3,last:null,note:''});})){closePicker();toast('Añadido al plan.');}}
   },
   'rt-edit':function(b){S.tab='plan';S.edit=true;S.editKey=b.dataset.k||null;render(true);window.scrollTo(0,0);},
+  'plan-cancel':function(){
+    if(!S.editSnap||!canEditCfg()){S.edit=false;render(true);return;}
+    var o=JSON.parse(S.editSnap),back=S.editKey;S.cfg.plans=o.p;S.cfg.activePlan=o.a;S.edit=false;S.editKey=null;S.editSnap=null;closePicker();saveCfg();if(back)S.tab='hoy';render(true);window.scrollTo(0,0);toast('Cambios descartados.');
+  },
   'plan-edit':function(){var back=S.edit&&S.editKey;S.edit=!S.edit;S.editKey=null;if(back)S.tab='hoy';render(true);window.scrollTo(0,0);},
   'plan-reset':function(){if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}var bp=S.cfg.plans.find(function(p){return p.id==='base';});if(bp)bp.sessions=clone(DEFAULT);saveCfg();render(true);toast('Plan original restaurado.');},
   'start-plan':function(b){S.tab='hoy';var k=b.dataset.k;if(S.draft&&S.draft.key!==k&&draftProgress(S.draft)>0){S.pendingSwitch=k;S.min=true;render(true);}else if(!S.draft||S.draft.key!==k)startDraft(k);else{S.min=false;render(true);}window.scrollTo(0,0);},
@@ -2522,7 +2527,7 @@ var ACT={
   },
   'sess-new':function(){
     if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
-    var rt=routine(),n=rt.length+1;
+    editBegin();var rt=routine(),n=rt.length+1;
     rt.push({key:'s'+Date.now().toString(36),name:'Sesión '+n,kind:'push',focus:'',items:[]});
     S.tab='plan';S.edit=true;saveCfg();render(true);window.scrollTo(0,0);toast('Sesión creada. Añade ejercicios desde Inicio → Ejercicios por zona.');
   },
