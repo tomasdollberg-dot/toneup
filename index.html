@@ -985,6 +985,9 @@ async function loadSocial(){
 }
 
 /* ---- Novedades: kudos, comentarios y me gusta de rutinas que otros te dan ---- */
+function cleanUser(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[\s.\-]+/g,'_').replace(/[^a-z0-9_]/g,'').replace(/_+/g,'_').replace(/^_+|_+$/g,'').slice(0,20);}
+function isDup(e){return !!e&&(e.code==='23505'||/duplicate|unique/i.test(e.message||''));}
+function dupMsg(u){var alt=(u.slice(0,17)+(10+Math.floor(Math.random()*90)));return 'Ya existe un usuario con ese nombre. Prueba con otro, por ejemplo «'+alt+'».';}
 var PC='id,username,display_name';
 function seenKey(){return 'cf:seen:'+(me&&me.id);}
 async function fetchNews(){
@@ -1162,7 +1165,7 @@ function fitPhoto(file,cb){
 function profHead(){
   var T=myTotals(),h='<div class="card phead"><div class="prow1"><button class="pav" data-act="pe-photo" aria-label="Cambiar foto de perfil">'+avatarHTML(prof)+'<i class="pcam">+</i></button><input id="pe-file" type="file" accept="image/*" hidden><div class="pinfo"><b>'+esc(prof.display_name||prof.username)+'</b><span>@'+esc(prof.username)+'</span></div></div>';
   if(S.pedit){
-    h+='<div class="form" style="margin-top:12px"><label class="field wide">Nombre de usuario<input id="pe-user" type="text" maxlength="20" autocomplete="off" autocapitalize="none" value="'+esc(prof.username)+'"></label><label class="field wide">Nombre para mostrar<input id="pe-name" type="text" maxlength="40" autocomplete="off" value="'+esc(prof.display_name||'')+'"></label><label class="field wide">Sobre ti<textarea id="pe-bio" maxlength="160" rows="3" placeholder="Ej.: Entreno por la mañana. Objetivo: 10 dominadas.">'+esc(prof.bio||'')+'</textarea></label></div>'+(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')+'<div class="prow-b" style="margin-top:10px"><button class="btn primary sm" data-act="pe-save">Guardar</button><button class="btn sm" data-act="pe-cancel">Cancelar</button>'+(prof.avatar?'<button class="btn sm" data-act="pe-photo-del">Quitar foto</button>':'')+'</div><p class="meta" style="margin-top:8px">Usuario: de 3 a 20 caracteres, minúsculas, números y guion bajo. Toca la foto para cambiarla.</p>';
+    h+='<div class="form" style="margin-top:12px"><label class="field wide">Nombre de usuario<input id="pe-user" type="text" maxlength="20" autocomplete="off" autocapitalize="none" value="'+esc(prof.username)+'"></label><label class="field wide">Nombre para mostrar<input id="pe-name" type="text" maxlength="40" autocomplete="off" value="'+esc(prof.display_name||'')+'"></label><label class="field wide">Sobre ti<textarea id="pe-bio" maxlength="160" rows="3" placeholder="Ej.: Entreno por la mañana. Objetivo: 10 dominadas.">'+esc(prof.bio||'')+'</textarea></label></div>'+(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')+'<div class="prow-b" style="margin-top:10px"><button class="btn primary sm" data-act="pe-save">Guardar</button><button class="btn sm" data-act="pe-cancel">Cancelar</button>'+(prof.avatar?'<button class="btn sm" data-act="pe-photo-del">Quitar foto</button>':'')+'</div><p class="meta" style="margin-top:8px">Usuario: lo pasamos a minúsculas, sin espacios ni símbolos. Toca la foto para cambiarla.</p>';
   }else{
     if(prof.bio)h+='<p class="pbio">'+esc(prof.bio)+'</p>';
     h+='<div class="pstat"><span><b>'+T.all.ses+'</b>sesiones</span><span><b>'+T.all.pts+'</b>puntos</span><span><b>'+S.soc.friends.length+'</b>amigos</span></div><p style="margin-top:12px"><button class="btn sm" data-act="pe-open">Editar perfil</button></p>';
@@ -1233,7 +1236,7 @@ function vAuth(){
 }
 function gName(){try{var m=(me&&me.user_metadata)||{};return String(m.full_name||m.name||'').trim().slice(0,40);}catch(e){return '';}}
 function vOnboard(){
-  return '<div class="pagehead"><p class="eyebrow">Último paso</p><h1>Tu perfil</h1></div><div class="card"><p class="meta" style="margin:0 0 10px">Tus amigos te encontrarán por tu nombre de usuario.</p><div class="form"><label class="field wide">Nombre de usuario<input id="pf-user" type="text" maxlength="20" autocomplete="off" autocapitalize="none" placeholder="Ej.: tomas_fuerza"></label><label class="field wide">Nombre para mostrar<input id="pf-name" type="text" maxlength="40" autocomplete="off" placeholder="Ej.: Tomás" value="'+esc(gName())+'"></label></div>'+(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')+'<button class="btn primary" data-act="pf-save">Guardar perfil</button><p class="meta" style="margin-top:10px">Entre 3 y 20 caracteres: minúsculas, números y guion bajo.</p></div><p style="margin-top:12px">'+cbtn('out','Cerrar sesión','btn sm','data-act="au-out"')+'</p>';
+  return '<div class="pagehead"><p class="eyebrow">Último paso</p><h1>Tu perfil</h1></div><div class="card"><p class="meta" style="margin:0 0 10px">Tus amigos te encontrarán por tu nombre de usuario.</p><div class="form"><label class="field wide">Nombre de usuario<input id="pf-user" type="text" maxlength="20" autocomplete="off" autocapitalize="none" placeholder="Ej.: tomas_fuerza"></label><label class="field wide">Nombre para mostrar<input id="pf-name" type="text" maxlength="40" autocomplete="off" placeholder="Ej.: Tomás" value="'+esc(gName())+'"></label></div>'+(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')+'<button class="btn primary" data-act="pf-save">Guardar perfil</button><p class="meta" style="margin-top:10px">Puedes escribirlo como quieras: lo pasamos a minúsculas, sin espacios ni símbolos (por ejemplo, «Mar-ATR» queda «mar_atr»).</p></div><p style="margin-top:12px">'+cbtn('out','Cerrar sesión','btn sm','data-act="au-out"')+'</p>';
 }
 function authErr(e){
   var m=(e&&e.message||'').toLowerCase();
@@ -2375,10 +2378,11 @@ var ACT={
   'au-google':function(){sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});},
   'au-out':async function(){await sb.auth.signOut();onSignedOut();},
   'pf-save':async function(){
-    var u=($('#pf-user').value||'').trim().toLowerCase(),n=($('#pf-name').value||'').trim();
-    if(!/^[a-z0-9_]{3,20}$/.test(u)){S.authMsg='El usuario debe tener de 3 a 20 caracteres: minúsculas, números o guion bajo.';render(true);return;}
+    var raw=$('#pf-user').value||'',u=cleanUser(raw),n=($('#pf-name').value||'').trim();
+    var keep=function(){var a=$('#pf-user'),b=$('#pf-name');if(a)a.value=raw;if(b)b.value=n;};
+    if(u.length<3){S.authMsg='Escribe un nombre de usuario de al menos 3 letras o números.';render(true);keep();return;}
     var r=await sb.from('profiles').insert({id:me.id,username:u,display_name:n||u});
-    if(r.error){S.authMsg=r.error.code==='23505'?'Ese nombre de usuario ya está en uso.':'No se pudo guardar el perfil.';render(true);return;}
+    if(r.error){S.authMsg=isDup(r.error)?dupMsg(u):'No se pudo guardar el perfil. Inténtalo de nuevo.';render(true);keep();return;}
     prof={id:me.id,username:u,display_name:n||u};S.authMsg='';render(true);renderStatus();loadSocial();
   },
   'news-clear':function(){S.soc.newsView=[];render(true);},
@@ -2389,11 +2393,12 @@ var ACT={
   'pe-photo-del':async function(){var r=await sb.from('profiles').update({avatar:null}).eq('id',me.id);if(r.error){toast('No se pudo quitar la foto.');return;}prof.avatar=null;render(true);toast('Foto quitada.');},
   'pe-cancel':function(){S.pedit=false;S.authMsg='';render(true);},
   'pe-save':async function(){
-    var u=($('#pe-user').value||'').trim().toLowerCase(),n=($('#pe-name').value||'').trim();
-    if(!/^[a-z0-9_]{3,20}$/.test(u)){S.authMsg='El usuario debe tener de 3 a 20 caracteres: minúsculas, números o guion bajo.';render(true);return;}
+    var raw=$('#pe-user').value||'',u=cleanUser(raw),n=($('#pe-name').value||'').trim(),bio0=($('#pe-bio')||{}).value||'';
+    var keep=function(){var a=$('#pe-user'),b=$('#pe-name'),c=$('#pe-bio');if(a)a.value=raw;if(b)b.value=n;if(c)c.value=bio0;};
+    if(u.length<3){S.authMsg='Escribe un nombre de usuario de al menos 3 letras o números.';render(true);keep();return;}
     var bio=PC.indexOf('bio')>=0?(($('#pe-bio')||{}).value||'').trim().slice(0,160):null,upd={username:u,display_name:n||u};if(bio!==null)upd.bio=bio||null;
     var r=await sb.from('profiles').update(upd).eq('id',me.id);
-    if(r.error){S.authMsg=r.error.code==='23505'?'Ese nombre de usuario ya está en uso.':'No se pudo guardar. Inténtalo de nuevo.';render(true);return;}
+    if(r.error){S.authMsg=isDup(r.error)?dupMsg(u):'No se pudo guardar. Inténtalo de nuevo.';render(true);keep();return;}
     prof.username=u;prof.display_name=n||u;if(bio!==null)prof.bio=bio;S.pedit=false;S.authMsg='';renderStatus();render(true);toast('Perfil actualizado.');loadSocial();
   },
   'soc-refresh':function(){loadSocial();},
