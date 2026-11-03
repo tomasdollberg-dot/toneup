@@ -1773,7 +1773,11 @@ function vPlan(){
   h+='<details class="card rules"><summary>Evidencia y fuentes de las reglas</summary><ul class="evl">'+EVID.map(function(e){return evHTML(e);}).join('')+'</ul><p class="meta">La evidencia describe promedios de grupos, no a una persona. Muchos estudios son pequeños o de calidad variable. Esto no sustituye el consejo de un profesional sanitario si tienes dolor o una lesión.</p></details>';
   h+='<details class="card rules"><summary>Reglas de tu rutina</summary><ul>'+rulesFor(pl).map(function(r){return '<li>'+esc(r)+'</li>';}).join('')+'</ul></details>';
   }
-  if(!focusK&&!S.edit&&rt.length&&window.CF_ASIS)h+='<div class="card pers"><b>Personaliza tu rutina</b><p class="meta">Añade ejercicios a todas las sesiones de este plan. Puedes pulsarlo varias veces.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="pl-core">'+ic(I.plus,16)+'Añadir core</button><button class="btn sm" data-act="pl-cardio">'+ic(I.plus,16)+'Añadir cardio</button></div></div>';
+  if(!focusK&&!S.edit&&rt.length&&window.CF_ASIS){
+    var P=S.pers,nsel=P?rt.filter(function(r){return P.sel[r.key];}).length:0;
+    if(!P)h+='<div class="card pers"><b>Personaliza tu rutina</b><p class="meta">Añade core o cardio a las sesiones que tú elijas. Puedes repetirlo varias veces.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="pl-core">'+ic(I.plus,16)+'Añadir core</button><button class="btn sm" data-act="pl-cardio">'+ic(I.plus,16)+'Añadir cardio</button></div></div>';
+    else h+='<div class="card pers"><b>Añadir '+(P.kind==='core'?'core':'cardio')+': ¿en qué sesiones?</b><div class="pchips" style="margin:10px 0">'+rt.map(function(r){return '<button class="gc'+(P.sel[r.key]?' on':'')+'" data-act="pers-tog" data-k="'+esc(r.key)+'" aria-pressed="'+!!P.sel[r.key]+'">'+esc(r.name||r.key)+'</button>';}).join('')+'<button class="gc add" data-act="pers-all">'+(nsel===rt.length?'Ninguna':'Todas')+'</button></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary"'+(nsel?'':' disabled')+' data-act="pers-go">Añadir'+(nsel?' ('+nsel+')':'')+'</button><button class="btn sm" data-act="pers-cancel">Cancelar</button></div></div>';
+  }
   rt.forEach(function(r){
     if(focusK&&r.key!==focusK)return;
     h+='<section class="card k-'+r.kind+'"><div class="s-h"><span class="plate"></span>'+(S.edit?'<input class="sname" type="text" maxlength="40" data-sn="'+esc(r.key)+'" value="'+esc(r.name)+'" aria-label="Nombre de la sesión" autocomplete="off">'+cbtn('sd:'+r.key,'Eliminar','btn sm','data-act="s-del" data-k="'+esc(r.key)+'"'):'<span class="nm">'+esc(r.name)+'</span><button class="btn sm sc go" data-act="start-plan" data-k="'+esc(r.key)+'">Entrenar</button>')+'</div><p class="focus">'+esc(r.focus||'')+'</p>';
@@ -1872,11 +1876,12 @@ var SUPER={'Piernas':['Cuádriceps','Isquios','Glúteos','Gemelos','Abductores',
 var SUPER_PAT={'Piernas':'sentadilla','Glúteos':'puente','Pecho':'press','Espalda':'dominada','Hombros':'pressh','Brazos':'curl','Core':'plancha','Calistenia':'fondos','Cardio':'caminar'};
 function inGrp(g,sg){return !sg||sg==='Todos'||(SUPER[sg]?SUPER[sg].indexOf(g)>=0:g===sg);}
 function grpCount(sg){var n=0;EX.forEach(function(e){if(inGrp(e.grp,sg))n++;});return n;}
+function persOpen(kind){var sel={};routine().forEach(function(r){sel[r.key]=true;});S.pers={kind:kind,sel:sel};render(true);}
 function persAdd(kind,key){
   if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
   var pl=activePlan(),H={exOf:exOf,has:function(id){return EX.has(id);}},n=0,full=0;
   pl.sessions.forEach(function(r,i){
-    if(key&&r.key!==key)return;
+    if(key&&[].concat(key).indexOf(r.key)<0)return;
     var id=kind==='core'?CF_ASIS.addCore(r,H,pl):CF_ASIS.addCardio(r,H,pl,i);
     if(id)n++;else full++;
   });
@@ -2269,7 +2274,7 @@ async function exportCsv(){
   if(await saveFile('tone-up.csv','﻿'+csv,'text/csv;charset=utf-8'))toast('Archivo listo.');
 }
 var ACT={
-  tab:function(b){if(S.soc){S.soc.avPrev=null;if(b.dataset.t!=='soc')S.soc.newsView=[];}S.tab=b.dataset.t;S.editKey=null;closePicker();render(true);window.scrollTo(0,0);},
+  tab:function(b){S.pers=null;if(S.soc){S.soc.avPrev=null;if(b.dataset.t!=='soc')S.soc.newsView=[];}S.tab=b.dataset.t;S.editKey=null;closePicker();render(true);window.scrollTo(0,0);},
   pick:function(b){var k=b.dataset.k;if(S.draft&&S.draft.key===k){S.min=false;render(true);return;}if(S.draft&&draftProgress(S.draft)>0){S.pendingSwitch=k;S.min=true;render(true);return;}startDraft(k);},
   'switch-yes':function(){startDraft(S.pendingSwitch);},
   'switch-no':function(){S.pendingSwitch=null;S.min=false;render(true);},
@@ -2553,8 +2558,12 @@ var ACT={
     if(!o.replay)toast(self?'Añade tus sesiones y ejercicios.':'¡Todo listo! Empieza cuando quieras.');
   },
   'onb-replay':function(){S.onb={step:3,tut:0,replay:true,path:null,d:{}};render(true);window.scrollTo(0,0);},
-  'pl-core':function(){persAdd('core',null);},
-  'pl-cardio':function(){persAdd('cardio',null);},
+  'pl-core':function(){persOpen('core');},
+  'pl-cardio':function(){persOpen('cardio');},
+  'pers-tog':function(b){if(S.pers){S.pers.sel[b.dataset.k]=!S.pers.sel[b.dataset.k];render(true);}},
+  'pers-all':function(){if(!S.pers)return;var rt=routine(),all=rt.every(function(r){return S.pers.sel[r.key];});rt.forEach(function(r){S.pers.sel[r.key]=!all;});render(true);},
+  'pers-cancel':function(){S.pers=null;render(true);},
+  'pers-go':function(){if(!S.pers)return;var ks=Object.keys(S.pers.sel).filter(function(k){return S.pers.sel[k];}),kind=S.pers.kind;S.pers=null;if(!ks.length)return;persAdd(kind,ks);},
   's-core':function(b){persAdd('core',b.dataset.k);},
   's-cardio':function(b){persAdd('cardio',b.dataset.k);},
   'wz-set':function(b){var k=b.dataset.k,v=b.dataset.v;S.wz[k]=(k==='days'||k==='mins'||k==='kg'||k==='otherN')?parseInt(v,10):v;if(k==='equip'&&v==='gym')S.wz.kg=0;render(true);},
