@@ -1272,7 +1272,24 @@ async function importBackup(file){
 /* ---------- avisos, descanso, audio ---------- */
 var toastT=null;
 function toast(msg){var t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true;},2600);}
-function unlockAudio(){try{var AC=window.AudioContext||window.webkitAudioContext;if(AC&&!actx)actx=new AC();if(actx&&actx.state==='suspended')actx.resume();}catch(e){}}
+var endA=null,tickA=null,audOk=false;
+function wavURL(parts){
+  var sr=22050,n=0,i,j;parts.forEach(function(p){n+=Math.round((p[1]+p[2])*sr);});
+  var buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+  function str(o,t){for(var k=0;k<t.length;k++)v.setUint8(o+k,t.charCodeAt(k));}
+  str(0,'RIFF');v.setUint32(4,36+n*2,true);str(8,'WAVE');str(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);str(36,'data');v.setUint32(40,n*2,true);
+  var pos=0;
+  parts.forEach(function(p){var tn=Math.round(p[1]*sr),gn=Math.round(p[2]*sr);for(j=0;j<tn;j++){var env=Math.min(1,j/(sr*0.006),(tn-j)/(sr*0.04));v.setInt16(44+(pos+j)*2,Math.round(Math.sin(2*Math.PI*p[0]*j/sr)*env*0.9*32767),true);}pos+=tn+gn;});
+  return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+}
+function audioSess(){try{if(navigator.audioSession)navigator.audioSession.type='transient';}catch(e){}}
+function unlockAudio(){
+  try{var AC=window.AudioContext||window.webkitAudioContext;if(AC&&!actx)actx=new AC();if(actx&&actx.state==='suspended')actx.resume();}catch(e){}
+  try{
+    if(!endA){endA=new Audio(wavURL([[988,0.18,0.07],[988,0.18,0.07],[1319,0.4,0.05]]));tickA=new Audio(wavURL([[660,0.12,0.02]]));endA.preload=tickA.preload='auto';}
+    if(!audOk){audOk=true;[endA,tickA].forEach(function(a){a.muted=true;var p=a.play();if(p&&p.then)p.then(function(){a.pause();a.currentTime=0;a.muted=false;}).catch(function(){audOk=false;a.muted=false;});else{a.pause();a.muted=false;}});}
+  }catch(e){}
+}
 var sndNodes=[],wl=null;
 function tone(at,f,dur,vol){
   if(!actx)return;var o=actx.createOscillator(),g=actx.createGain();
@@ -1281,23 +1298,18 @@ function tone(at,f,dur,vol){
 }
 function cancelSnd(){sndNodes.forEach(function(o){try{o.stop();o.disconnect();}catch(e){}});sndNodes=[];}
 function soundOn(){return S.cfg.snd!==false;}
-/* triple pitido final (fuerte, para oírlo con música o auriculares) */
+/* triple pitido final: archivo de audio (suena aunque el móvil esté en silencio y con auriculares); WebAudio solo de respaldo */
+function beepWA(){try{if(actx){var t=actx.currentTime+0.02;tone(t,988,0.18,0.7);tone(t+0.25,988,0.18,0.7);tone(t+0.5,1319,0.35,0.7);}}catch(e){}}
+function playClip(a,fallback){
+  if(!soundOn())return;audioSess();
+  try{if(!a){fallback();return;}a.currentTime=0;a.muted=false;var p=a.play();if(p&&p.catch)p.catch(function(){fallback();});}catch(e){fallback();}
+}
 function beep(){
-  try{if(actx&&soundOn()){var t=actx.currentTime+0.02;tone(t,988,0.18,0.7);tone(t+0.25,988,0.18,0.7);tone(t+0.5,1319,0.35,0.7);}}catch(e){}
+  playClip(endA,beepWA);
   try{if(navigator.vibrate)navigator.vibrate([180,80,180]);}catch(e){}
 }
-/* programa los sonidos en el reloj de audio: suenan a su hora aunque el temporizador de la página se retrase */
-function schedSnd(){
-  cancelSnd();if(!rest||!actx||!soundOn()){if(rest)rest.sched=false;return;}
-  try{
-    if(actx.state==='suspended')actx.resume();
-    var left=(rest.end-Date.now())/1000,now=actx.currentTime;
-    if(left<=0.05){rest.sched=false;return;}
-    [3,2,1].forEach(function(k){if(left>k+0.1)tone(now+left-k,660,0.12,0.35);});
-    var t=now+left;tone(t,988,0.18,0.7);tone(t+0.25,988,0.18,0.7);tone(t+0.5,1319,0.35,0.7);
-    rest.sched=true;
-  }catch(e){rest.sched=false;}
-}
+function tickBeep(){playClip(tickA,function(){try{if(actx){tone(actx.currentTime+0.02,660,0.12,0.35);}}catch(e){}});}
+function schedSnd(){if(rest){rest.tk=null;}}
 /* mantiene la pantalla encendida mientras entrenas, para que el aviso suene con los auriculares */
 function syncWake(){
   try{
@@ -1316,10 +1328,11 @@ function tick(){
   if(rest){
     var left=Math.ceil((rest.end-Date.now())/1000);
     if(left<=0){
-      if(!rest.done){rest.done=true;rest.hideAt=Date.now()+7000;if(rest.sched&&actx&&actx.state==='running'){try{if(navigator.vibrate)navigator.vibrate([180,80,180]);}catch(e){}}else beep();}
+      if(!rest.done){rest.done=true;rest.hideAt=Date.now()+7000;beep();}
       $('#restL').textContent='Descanso terminado';$('#restN').textContent='0:00';$('#restP').style.width='100%';$('#rest').classList.add('end');
       if(Date.now()>rest.hideAt)stopRest();
     }else{
+      if(left<=3&&rest.tk!==left){rest.tk=left;tickBeep();}
       $('#restL').textContent=rest.label==='Temporizador'?'Temporizador':'Descanso';$('#restN').textContent=clock(left);
       $('#restP').style.width=Math.min(100,Math.round((1-left/rest.total)*100))+'%';
     }
