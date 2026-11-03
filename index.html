@@ -233,6 +233,7 @@ p{margin:0}
 body.focus .hdr,body.focus .nav{display:none}
 body.kb .nav{display:none}
 .nav-in:empty{display:none}
+.pts summary{cursor:pointer;list-style:none}.pts ul{margin:8px 0 6px;padding-left:18px;line-height:1.5}.ptot{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.ptot .num{font-size:34px;line-height:1}
 body.focus .rest{bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 .tbar{position:fixed;left:0;right:0;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:21;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));pointer-events:none}
 .tbar[hidden]{display:none}
@@ -910,7 +911,7 @@ async function boot(){
 }
 
 /* ---------- cuenta, amigos y feed ---------- */
-function newSoc(){return {loaded:false,loading:false,err:'',sub:'feed',rk:'vol',friends:[],inc:[],out:[],profiles:{},feed:[],kudos:{},comments:{},openC:null,q:'',results:null,news:[],newsView:[],newsOk:false};}
+function newSoc(){return {loaded:false,loading:false,err:'',sub:'feed',rk:'sem',friends:[],inc:[],out:[],profiles:{},feed:[],kudos:{},comments:{},openC:null,q:'',results:null,news:[],newsView:[],newsOk:false};}
 var AVC=['#C23229','#1B58C4','#237A41','#A6720A','#6B3FA0','#0F7B8A'];
 function avatarHTML(p){
   var u=(p&&p.username)||'',n=((p&&(p.display_name||p.username))||'?').trim().charAt(0).toUpperCase(),h=0;
@@ -952,7 +953,7 @@ async function loadSocial(){
     });
     var since=new Date(Date.now()-35*864e5).toISOString();
     var q=await Promise.all([
-      sb.from('sessions').select('user_id,id,date,data').neq('user_id',me.id).gte('date',since).order('date',{ascending:false}).limit(300),
+      sb.from('sessions').select('user_id,id,date,data').neq('user_id',me.id).gte('date',since).order('date',{ascending:false}).limit(800),
       sb.from('kudos').select('owner_id,session_id,user_id,created_at').limit(3000),
       sb.from('comments').select('id,owner_id,session_id,user_id,body,created_at').order('created_at',{ascending:true}).limit(1000)
     ]);
@@ -1068,21 +1069,37 @@ function feedCard(it){
   }
   return h+'</article>';
 }
+/* puntos: no dependen del peso levantado, así vale igual el esfuerzo de todos */
+function sPts(d){return 20+2*Math.min(sSets(d),24)+10*Math.min((d.prs||[]).length,3);}
+function wkOf(date){var x=new Date(date);x=new Date(x.getFullYear(),x.getMonth(),x.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime();}
+function score(items,from){
+  var days={},r={pts:0,ses:0,sets:0,pr:0,bonus:0},wk={};
+  items.forEach(function(it){if(it.date<from||shareCheck(it.d))return;var k=new Date(it.date).toDateString(),p=sPts(it.d);if(!days[k]||p>days[k].p)days[k]={p:p,d:it.d,w:wkOf(it.date)};});
+  Object.keys(days).forEach(function(k){var x=days[k];r.pts+=x.p;r.ses++;r.sets+=sSets(x.d);r.pr+=(x.d.prs||[]).length;wk[x.w]=(wk[x.w]||0)+1;});
+  Object.keys(wk).forEach(function(w){if(wk[w]>=3){r.pts+=15;r.bonus+=15;}});
+  return r;
+}
+function monthStart(){var d=new Date();return new Date(d.getFullYear(),d.getMonth(),1);}
+var LEVELS=[[0,'Principiante'],[300,'Constante'],[1000,'Fuerte'],[2500,'Imparable'],[5000,'Leyenda']];
+function levelOf(p){var i=0;LEVELS.forEach(function(l,j){if(p>=l[0])i=j;});var nx=LEVELS[i+1];return {name:LEVELS[i][1],next:nx?nx[0]-p:0,nname:nx?nx[1]:''};}
+function myTotals(){
+  var own=S.sessions.map(function(s){return {date:s.date,d:s};});
+  return {all:score(own,''),mon:score(own,monthStart().toISOString()),wk:score(own,weekStart().toISOString())};
+}
 function rankHTML(){
-  var soc=S.soc,wk=weekStart().toISOString(),rows={};
-  function add(uid,d,date){if(date<wk)return;var r=rows[uid]=rows[uid]||{u:uid,ses:0,sets:0,vol:0,pr:0};r.ses++;r.sets+=sSets(d);r.vol+=sVol(d);r.pr+=(d.prs||[]).length;}
-  S.sessions.forEach(function(s){if(s.shared!==false&&!shareCheck(s))add(me.id,s,s.date);});
-  soc.feed.forEach(function(f){if(soc.friends.indexOf(f.o)>=0)add(f.o,f.d,f.date);});
-  soc.friends.concat([me.id]).forEach(function(u){if(!rows[u])rows[u]={u:u,ses:0,sets:0,vol:0,pr:0};});
-  var k=soc.rk,list=Object.keys(rows).map(function(u){return rows[u];}).sort(function(a,b){return b[k]-a[k]||b.vol-a.vol;});
-  var h='<div class="pchips">'+[['vol','Volumen'],['ses','Sesiones'],['pr','Récords']].map(function(o){return '<button class="gc'+(k===o[0]?' on':'')+'" data-act="rk-set" data-v="'+o[0]+'">'+o[1]+'</button>';}).join('')+'</div>';
+  var soc=S.soc,k=soc.rk==='mes'?'mes':'sem',from=(k==='mes'?monthStart():weekStart()).toISOString(),items={};
+  S.sessions.forEach(function(s){if(s.shared!==false)(items[me.id]=items[me.id]||[]).push({date:s.date,d:s});});
+  soc.feed.forEach(function(f){if(soc.friends.indexOf(f.o)>=0)(items[f.o]=items[f.o]||[]).push({date:f.date,d:f.d});});
+  var list=soc.friends.concat([me.id]).map(function(u){var r=score(items[u]||[],from);r.u=u;return r;}).sort(function(a,b){return b.pts-a.pts||b.ses-a.ses;});
+  var h='<div class="pchips">'+[['sem','Esta semana'],['mes','Este mes']].map(function(o){return '<button class="gc'+(k===o[0]?' on':'')+'" data-act="rk-set" data-v="'+o[0]+'">'+o[1]+'</button>';}).join('')+'</div>';
   h+='<div class="card">';
   list.forEach(function(r,i){
     var p=r.u===me.id?prof:pOf(r.u);
-    var val=k==='vol'?fmt(Math.round(r.vol/100)/10)+' t':k==='ses'?r.ses+' ses.':r.pr+' récords';
-    h+='<div class="rk'+(r.u===me.id?' me':'')+'"><span class="rkn num">'+(i+1)+'</span>'+avatarHTML(p)+'<span class="rkname">'+esc(r.u===me.id?'Tú':pName(r.u))+'<small>'+r.ses+' sesiones · '+r.sets+' series</small></span><b class="num">'+val+'</b></div>';
+    h+='<div class="rk'+(r.u===me.id?' me':'')+'"><span class="rkn num">'+(i+1)+'</span>'+avatarHTML(p)+'<span class="rkname">'+esc(r.u===me.id?'Tú':pName(r.u))+'<small>'+r.ses+' sesiones · '+r.sets+' series · '+r.pr+' récords</small></span><b class="num">'+r.pts+' pts</b></div>';
   });
-  return h+'</div><p class="meta">Semana en curso, de lunes a hoy. Solo cuentan las sesiones compartidas de al menos '+MIN_SHARE+' min.</p>';
+  h+='</div><p class="meta">'+(k==='mes'?'Mes en curso, desde el día 1.':'Semana en curso, de lunes a hoy.')+' Solo cuentan las sesiones compartidas de al menos '+MIN_SHARE+' min.</p>';
+  h+='<details class="card pts"><summary><b>Cómo se puntúa</b></summary><ul><li><b>20 puntos</b> por cada sesión.</li><li><b>2 puntos</b> por serie (hasta 24 series por sesión).</li><li><b>10 puntos</b> por cada récord personal (hasta 3 por sesión).</li><li><b>15 puntos extra</b> cada semana en la que entrenas 3 días o más.</li><li>Cuenta una sola sesión por día.</li></ul><p class="meta">El peso que levantas no suma: gana quien más constante y más esfuerzo pone, no quien más pesa.</p></details>';
+  return h;
 }
 function personRow(p){
   var soc=S.soc,id=p.id,btn;
@@ -1137,6 +1154,8 @@ function profileHTML(){
   if(S.pedit){h+='<div class="form" style="margin-top:12px"><label class="field wide">Nombre de usuario<input id="pe-user" type="text" maxlength="20" autocomplete="off" autocapitalize="none" value="'+esc(prof.username)+'"></label><label class="field wide">Nombre para mostrar<input id="pe-name" type="text" maxlength="40" autocomplete="off" value="'+esc(prof.display_name||'')+'"></label></div>'+(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')+'<div class="prow-b" style="margin-top:10px"><button class="btn primary sm" data-act="pe-save">Guardar</button><button class="btn sm" data-act="pe-cancel">Cancelar</button></div><p class="meta" style="margin-top:8px">Entre 3 y 20 caracteres: minúsculas, números y guion bajo.</p>';}
   else h+='<p style="margin-top:10px"><button class="btn sm" data-act="pe-open">Editar nombre de usuario</button></p>';
   h+='<label class="chk" style="margin-top:12px"><input type="checkbox" data-sh="1"'+(S.cfg.share!==false?' checked':'')+'><span>Compartir mis sesiones nuevas con mis amigos (solo las de 20 min o más y con 4 series o más; puedes cambiarlo en cada sesión del historial)</span></label></div>';
+  var T=myTotals(),lv=levelOf(T.all.pts);
+  h+='<h2>Tus puntos</h2><div class="card pts"><div class="ptot"><b class="num">'+T.all.pts+'</b><span>puntos en total · nivel <b>'+lv.name+'</b></span></div>'+(lv.next?'<p class="meta" style="margin:6px 0 0">Te faltan '+lv.next+' puntos para «'+lv.nname+'».</p>':'')+'<div class="fs" style="margin-top:10px"><span><b>'+T.wk.pts+'</b> esta semana</span><span><b>'+T.mon.pts+'</b> este mes</span><span><b>'+T.all.ses+'</b> sesiones</span><span><b>'+T.all.pr+'</b> récords</span></div><p class="meta" style="margin:8px 0 0">Se calculan con todas tus sesiones guardadas, así que nunca se pierden.</p></div>';
   h+='<h2>Copia de seguridad</h2><div class="card"><p class="meta" style="margin:0 0 10px">Guarda todo en un archivo o restaura uno anterior, por ejemplo el que exportes desde la versión de Claude.</p><div class="prow-b"><button class="btn sm" data-act="bk-export">Exportar copia (JSON)</button><button class="btn sm" data-act="bk-import">Importar copia</button></div></div>';
   h+='<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="onb-replay">Ver el tutorial</button>'+cbtn('out','Cerrar sesión','btn','data-act="au-out"')+'</div>';
   return h;
@@ -1833,7 +1852,7 @@ var TUT=[
  {k:'hoy',t:'Entrenar: tu sesión de hoy',x:['Pulsa «Empezar rutina»: el reloj arranca solo.','Escribe el peso y las repeticiones de cada serie y marca ✓. El temporizador de descanso se abre solo.','Al acabar pulsa «Terminar». ¿Empezaste por error? Usa «Cancelar entrenamiento», o elimina la sesión después desde el resumen.']},
  {k:'plan',t:'Plan: tu semana de entrenamiento',x:['Aquí ves todas tus sesiones y los ejercicios de cada una.','«Editar rutina» te deja cambiar ejercicios, series y repeticiones.','«Añadir core» y «Añadir cardio» completan tu plan en un toque, y puedes crear otros planes cuando quieras.']},
  {k:'prog',t:'Progreso: ve cómo mejoras',x:['Elige un ejercicio y verás su curva, tu mejor serie y tu 1RM estimado.','Abajo está el historial de todas tus sesiones. Desde ahí puedes compartirlas, hacerlas privadas o eliminarlas.']},
- {k:'soc',t:'Amigos: entrenar en compañía',x:['Busca a tus amigos por su usuario o invítalos con un enlace.','Cuando acepten verás su actividad: puedes darles kudos y comentar.','Una burbuja roja te avisa de solicitudes, kudos y comentarios nuevos.','El ranking semanal compara volumen, sesiones y récords.']},
+ {k:'soc',t:'Amigos: entrenar en compañía',x:['Busca a tus amigos por su usuario o invítalos con un enlace.','Cuando acepten verás su actividad: puedes darles kudos y comentar.','Una burbuja roja te avisa de solicitudes, kudos y comentarios nuevos.','El ranking semanal y mensual da puntos por constancia, series y récords, no por el peso levantado.']},
  {k:'soc',t:'Compartir tu progreso',x:['Tus sesiones se comparten con tus amigos solas, si duran 20 minutos o más y tienen al menos 4 series.','Si prefieres que una sea privada, ábrela en Progreso → Historial y cámbialo.','También puedes compartir una rutina entera: Plan → «Compartir con amigos».']},
  {k:'metas',t:'Metas: lo que quieres lograr',x:['Marca tus metas y ve cuáles vas cumpliendo.','Apunta tu peso corporal de vez en cuando para ver la evolución.']},
  {k:'inicio',t:'Ponla en tu pantalla de inicio',x:['iPhone: abre la app en Safari, pulsa Compartir y luego «Añadir a pantalla de inicio».','Android: menú ⋮ de Chrome y «Instalar aplicación».','Así se abre como una app y mantiene la sesión iniciada.']}
