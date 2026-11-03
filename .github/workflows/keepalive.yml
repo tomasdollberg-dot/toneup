@@ -9,4 +9,4 @@ jobs:
     steps:
       - name: Consulta ligera a la base de datos (clave pública anon)
         run: |
-          curl -fsS "https://xlzpmroccxkgvohfrwvz.supabase.co/rest/v1/app_config?select=id&limit=1" -H "apikey: sb_publishable_f2ZOVlSAfV_pJUnJ8YCaig_6djBKMtv" -H "Authorization: Bearer sb_publishable_f2ZOVlSAfV_pJUnJ8YCaig_6djBKMtv" > /dev/null
+          curl -fsS "https://xlzpmroccxkgvohfrwvz.supabase.co/rest/v1/app_config?select=user_id&limit=1" -H "apikey: sb_publishable_f2ZOVlSAfV_pJUnJ8YCaig_6djBKMtv" -H "Authorization: Bearer sb_publishable_f2ZOVlSAfV_pJUnJ8YCaig_6djBKMtv" > /dev/null
