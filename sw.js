@@ -1,6 +1,6 @@
 /* Service worker: la app abre rápido y sin conexión con lo ya visto.
    Los datos (Supabase) y las páginas siempre van a la red primero. */
-var V='cf-v3',SHELL=['./','index.html','tecnica.js','tecnica-var.js','asistente.js','config.js','icon-192.png'];
+var V='cf-v4',SHELL=['./','index.html','tecnica.js','tecnica-var.js','asistente.js','config.js','icon-192.png'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(V).then(function(c){return c.addAll(SHELL);}).then(function(){return self.skipWaiting();}));});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(n){return n!==V;}).map(function(n){return caches.delete(n);}));}).then(function(){return self.clients.claim();}));});
 self.addEventListener('fetch',function(e){
