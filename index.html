@@ -326,6 +326,7 @@ section.ex{scroll-margin-top:70px}
 .cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}.cal-w{font-style:normal;font-size:11px;color:var(--muted);font-weight:700}
 .cal-d{font-style:normal;position:relative;height:36px;line-height:36px;border-radius:50%;font-size:13px;font-family:var(--font-num);color:var(--muted)}.cal-d.today{box-shadow:inset 0 0 0 1.5px var(--ink);color:var(--ink)}
 .cal-d.on{background:var(--blue);color:var(--on-color);font-weight:700}.cal-d.on.k-piernas{background:var(--red)}.cal-d.on.k-pull{background:var(--green)}.cal-d sup{position:absolute;top:0;right:2px;font-size:9px;line-height:1}
+.coach{border:1.5px solid var(--blue)}.coach ol{margin:8px 0;padding-left:20px;font-size:14px;line-height:1.5}.coach .meta{margin:0 0 10px}
 .seg{display:flex;gap:4px;padding:4px;margin:0 0 14px;background:var(--raised);border-radius:14px}.seg button{flex:1;min-height:40px;border:0;border-radius:11px;background:transparent;color:var(--muted);font-weight:700;font-size:15px}.seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .tab[aria-current="page"]{color:var(--bg);background:var(--ink)}
 .tundo{border:0;background:transparent;color:var(--gold,#f5c542);font:inherit;font-weight:800;margin-left:8px;padding:4px 6px;text-decoration:underline}
@@ -1528,7 +1529,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=52,verT=0;
+var APP_VER=53,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -1607,6 +1608,7 @@ function vTrain(d){
   h+='<div class="sw-top"><button class="sw-ic" data-act="timer-open" data-free="1" aria-label="Temporizador de descanso">'+ic(I.timer,22)+'</button><span class="sw-el num" id="elapsed">'+(d.startedAt?clock((Date.now()-d.startedAt)/1000):'0:00')+'</span><button class="sw-fin" data-act="finish">Terminar</button></div>';
   h+='<h2 class="sw-title">'+esc(d.name)+'</h2><p class="sw-meta"><span>'+esc(dateMed(new Date().toISOString()))+'</span><span><b class="num" id="whCount">'+cs.dn+'/'+cs.tot+'</b> series</span></p><div class="sw-bar"><i id="whBar" style="width:'+(cs.tot?Math.round(cs.dn/cs.tot*100):0)+'%"></i></div>';
   if(d.items.length>2)h+='<div class="exnav" aria-label="Ir a un ejercicio">'+d.items.map(function(it,i){var ok=it.sets.length&&it.sets.every(function(x){return x.done||x.w;});return '<button class="exn'+(ok?' ok':'')+'" data-act="ex-jump" data-i="'+i+'" aria-label="Ejercicio '+(i+1)+': '+esc(exOf(it.id).name)+'">'+(i+1)+'</button>';}).join('')+'</div>';
+  if(!S.sessions.length&&!ls.get('cf:coach'))h+='<div class="card coach"><b>Tu primera sesión, paso a paso</b><ol><li>En cada serie escribe el <b>peso</b> y las <b>repeticiones</b>. Si no sabes cuánto, empieza ligero.</li><li>Pulsa <b>✓</b> al terminar la serie. Empieza solo el descanso y avisa cuando acabe.</li><li>Al acabar todo pulsa <b>Terminar</b>. La app guarda la sesión y te da puntos.</li></ol><p class="meta">Toca el nombre de un ejercicio para ver cómo se hace.</p><button class="btn sm primary" data-act="coach-ok">Entendido</button></div>';
   h+='<details class="card warm"><summary>Calentamiento recomendado</summary>'
     +'<label class="chk"><input type="checkbox" data-w="mov"'+(d.warm.mov?' checked':'')+'><span>5–10 min de movilidad o cardio suave</span></label>'
     +'<label class="chk"><input type="checkbox" data-w="apx"'+(d.warm.apx?' checked':'')+'><span>Series de aproximación del primer ejercicio (toca el número de serie para marcarla como «A»)</span></label>'
@@ -2449,6 +2451,7 @@ var ACT={
   'stale-keep':function(){S.stale=false;S.draft.startedAt=Date.now();saveDraft();render(true);},
   'stale-save':function(){S.stale=false;S.draft.startedAt=Date.now()-60000;saveDraft();finish();},
   'stale-drop':function(){S.stale=false;S.draft=null;S.min=false;saveDraft();stopRest();render(true);},
+  'coach-ok':function(){ls.set('cf:coach',1);render(true);},
   undo:function(){var f=undoFn;undoFn=null;$('#toast').hidden=true;if(f)f();},
   finish:function(){finish();},
   discard:function(){S.draft=null;S.min=false;saveDraft();stopRest();S.pendingSwitch=null;render(true);},
