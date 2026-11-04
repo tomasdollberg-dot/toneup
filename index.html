@@ -51,6 +51,7 @@ img{max-width:100%}
 .rkn{width:20px;text-align:center;color:var(--muted)}
 .rkname{flex:1;min-width:0;display:flex;flex-direction:column;overflow-wrap:anywhere}
 .rkname small{color:var(--muted);font-weight:500;font-size:12px}
+.hsteps{margin:14px 0 0;padding-left:22px;font-size:14px;color:var(--muted)}.hsteps li{margin:6px 0}.hsteps b{color:var(--ink)}
 .amsg{font-size:14px;margin:0 0 12px;padding:10px 12px;border-radius:var(--r-sm);background:var(--raised)}
 .auth .pchips{margin-bottom:14px}
 
@@ -958,7 +959,15 @@ function pwaHTML(){
   if(pwaEv)return '<button class="btn" style="margin-top:12px;width:100%" data-act="pwa-install">Instalar Tone Up en este dispositivo</button>';
   return '<p class="meta" style="margin-top:8px"><a href="instalar.html">¿Cómo la instalo en mi móvil?</a></p>';
 }
-function pwaRefresh(){var s=document.getElementById('pwa-slot');if(s)s.innerHTML=pwaHTML();}
+var UA=navigator.userAgent||'',IS_IOS=/iPad|iPhone|iPod/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),IS_AND=/Android/i.test(UA);
+function showHero(){return !isStandalone()&&!S.webOk&&(IS_IOS||IS_AND||!!pwaEv);}
+function heroHTML(){
+  var steps=IS_IOS?'<ol class="hsteps"><li>Abre esta página en <b>tu navegador predeterminado</b> (el que usas normalmente).</li><li>Toca <b>Compartir</b> (el cuadrado con la flecha hacia arriba) o el menú <b>⋯</b> del navegador.</li><li>Elige <b>Añadir a pantalla de inicio</b>.</li><li>Pulsa <b>Añadir</b>. Ya tienes el icono de Tone Up.</li></ol>'
+    :'<ol class="hsteps"><li>Abre esta página en <b>Chrome</b>.</li><li>Toca el menú <b>⋮</b> y elige <b>Instalar app</b> (o «Añadir a pantalla de inicio»).</li><li>Confirma. El icono queda en tu pantalla de inicio.</li></ol>';
+  var main=(pwaEv&&!IS_IOS)?'<button class="btn primary" style="width:100%" data-act="pwa-install">Descargar la app</button>':'<button class="btn primary" style="width:100%" data-act="pwa-help" aria-expanded="'+!!S.pwaHelp+'">Descargar la app</button>';
+  return '<div class="pagehead"><p class="eyebrow">Tone Up</p><h1>Descarga la app</h1></div><div class="card auth"><p style="margin:0 0 14px">Instálala gratis en tu móvil en unos segundos. Sin tiendas de aplicaciones y se abre a pantalla completa.</p>'+main+((S.pwaHelp||(!pwaEv&&!IS_IOS))?steps:'')+'<p style="margin:16px 0 0;text-align:center"><button class="btn sm" data-act="web-ok">Prefiero usarla desde la web</button></p></div>';
+}
+function pwaRefresh(){var s=document.getElementById('pwa-slot');if(s)s.innerHTML=pwaHTML();var a=document.activeElement;if(S.mode==='auth'&&!S.noLib&&showHero()&&!(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName)))render(true);}
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pwaEv=e;pwaRefresh();});
 window.addEventListener('appinstalled',function(){pwaEv=null;pwaRefresh();toast('Tone Up instalada. Ábrela desde tu pantalla de inicio.');});
 var initP=null;
@@ -1308,6 +1317,7 @@ function vSoc(){
   return h;
 }
 function vAuth(){
+  if(!S.noLib&&showHero())return heroHTML();
   if(S.noLib)return '<div class="pagehead"><p class="eyebrow">Tone Up</p><h1>Sin conexión</h1></div><div class="card"><p class="amsg" role="alert">'+esc(S.authMsg)+'</p><button class="btn primary" onclick="location.reload()">Reintentar</button></div>';
   var m=S.authMode,h='<div class="pagehead"><p class="eyebrow">Tone Up</p><h1>'+(m==='up'?'Crear cuenta':'Entrar')+'</h1></div><div class="card auth">'+(CFG.GOOGLE?'<button class="gbig" data-act="au-google"><svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z"/><path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg><span>Continuar con Google</span></button><p class="muted" style="font-size:12px;margin:8px 2px 0;text-align:center">La primera vez, Google te enviará un correo de aviso por entrar en Tone Up. Es normal y no tienes que hacer nada.</p><p class="gor"><span>o con tu correo</span></p>':'')+'<div class="pchips"><button class="gc'+(m!=='up'?' on':'')+'" data-act="au-mode" data-v="in">Ya tengo cuenta</button><button class="gc'+(m==='up'?' on':'')+'" data-act="au-mode" data-v="up">Soy nuevo</button></div>'
    +'<div class="form">'+(m==='up'?'<label class="field">Nombre<input id="au-first" type="text" maxlength="30" autocomplete="given-name"></label><label class="field">Apellidos<input id="au-last" type="text" maxlength="40" autocomplete="family-name"></label>':'')+'<label class="field wide">Correo electrónico<input id="au-email" type="email" autocomplete="email" inputmode="email"></label><label class="field wide">Contraseña (mínimo 8 caracteres)<input id="au-pass" type="password" autocomplete="'+(m==='up'?'new-password':'current-password')+'"></label>'+(m==='up'?birthHTML('au'):'')+'</div>'
@@ -1563,7 +1573,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=63,verT=0;
+var APP_VER=64,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -2099,7 +2109,7 @@ var TUT=[
  {k:'soc',t:'Amigos: entrenar en compañía',x:['Busca a tus amigos por su usuario o invítalos con un enlace.','Cuando acepten verás su actividad: puedes darles kudos y comentar.','Una burbuja roja te avisa de solicitudes, kudos y comentarios nuevos.','El ranking semanal y mensual da puntos por constancia, series y récords, no por el peso levantado.']},
  {k:'soc',t:'Compartir tu progreso',x:['Tus sesiones se comparten con tus amigos solas, si duran 20 minutos o más y tienen al menos 4 series.','Si prefieres que una sea privada, ábrela en Progreso → Historial y cámbialo.','También puedes compartir una rutina entera: Plan → «Compartir con amigos».']},
  {k:'metas',t:'Metas: lo que quieres lograr',x:['Marca tus metas y ve cuáles vas cumpliendo.','Apunta tu peso corporal de vez en cuando para ver la evolución.']},
- {k:'inicio',t:'Ponla en tu pantalla de inicio',x:['iPhone: abre la app en Safari, pulsa Compartir y luego «Añadir a pantalla de inicio».','Android: menú ⋮ de Chrome y «Instalar aplicación».','Así se abre como una app y mantiene la sesión iniciada.']}
+ {k:'inicio',t:'Ponla en tu pantalla de inicio',x:['iPhone: abre la app en tu navegador, pulsa Compartir y luego «Añadir a pantalla de inicio».','Android: menú ⋮ de Chrome y «Instalar aplicación».','Así se abre como una app y mantiene la sesión iniciada.']}
 ];
 var ONB_CUR={'0':'Ninguno','1':'1–2 días','3':'3–4 días','5':'5 o más'};
 function needsOnb(){
@@ -2652,6 +2662,8 @@ var ACT={
   'ex-add-plan':function(b){editRoutine(function(rt){var r=rt.find(function(x){return x.key===b.dataset.k;});if(r)r.items.push({id:b.dataset.id,sets:3,last:null,note:''});});toast('Añadido al plan.');},
 
   'au-mode':function(b){S.authMode=b.dataset.v;S.authMsg='';render(true);},
+  'pwa-help':function(){S.pwaHelp=!S.pwaHelp;render(true);},
+  'web-ok':function(){S.webOk=true;render(true);},
   'pwa-install':function(){if(!pwaEv)return;var e=pwaEv;e.prompt();e.userChoice.then(function(){pwaEv=null;pwaRefresh();});},
   'au-open':function(){S.mode='auth';render(true);},
   'au-in':async function(){
