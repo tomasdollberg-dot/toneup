@@ -937,7 +937,7 @@ async function onSignedIn(user){
     pendList().forEach(function(p){if(!S.sessions.some(function(x){return x.id===p.id;}))S.sessions.unshift(p);});S.sessions.sort(byDateDesc);setTimeout(flushPending,1500);
     S.cfgReady=true;S.sessReady=true;S.slow=false;
   }catch(e){S.slow=true;toast('No se pudieron cargar tus datos. Revisa la conexión y recarga.');}
-  S.soc=newSoc();S.draft=ls.get('cf:draft');
+  S.soc=newSoc();S.draft=ls.get('cf:draft');checkStale();restoreRest();
   rebuildEx();renderStatus();render(true);
   if(prof)loadSocial();
 }
@@ -1381,17 +1381,24 @@ function syncWake(){
     else if(!S.draft&&wl){var l2=wl;wl=null;l2.release().catch(function(){});}
   }catch(e){}
 }
+function persistRest(){if(rest&&!rest.done)ls.set('cf:rest',{end:rest.end,total:rest.total,label:rest.label,exId:rest.exId});else ls.del('cf:rest');}
+function restoreRest(){var q=ls.get('cf:rest');if(q&&q.end>Date.now()&&S.draft&&!S.stale){rest={end:q.end,total:q.total,done:false,label:q.label,exId:q.exId||null};$('#rest').hidden=false;schedSnd();tick();}else ls.del('cf:rest');}
+function checkStale(){S.stale=!!(S.draft&&S.draft.startedAt&&Date.now()-S.draft.startedAt>6*3600e3);if(S.stale)ls.del('cf:rest');}
+function staleHTML(d){
+  var hrs=Math.round((Date.now()-d.startedAt)/3600e3),n=draftProgress(d);
+  return '<div class="pagehead"><p class="eyebrow">Sesión sin terminar</p><h1>¿Sigues entrenando?</h1></div><div class="card"><h3>'+esc(d.name)+'</h3><p class="meta">Empezaste esta sesión hace unas '+hrs+' horas y tiene '+n+(n===1?' serie hecha':' series hechas')+'. Si la continúas, el reloj empezará de cero para no contar el tiempo que estuviste fuera.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn primary" data-act="stale-keep">Continuar sesión</button>'+(n?'<button class="btn" data-act="stale-save">Guardar lo hecho y terminar</button>':'')+cbtn('stale-drop','Descartar sesión','btn','data-act="stale-drop"')+'</div></div>';
+}
 function startRestSec(sec,label,exId){
-  rest={end:Date.now()+sec*1000,total:sec,done:false,label:label,exId:exId||null};
+  rest={end:Date.now()+sec*1000,total:sec,done:false,label:label,exId:exId||null};persistRest();
   $('#rest').hidden=false;$('#rest').classList.remove('end');unlockAudio();schedSnd();tick();
 }
 function startRest(it){var ex=exOf(it.id);startRestSec(restFor(ex),ex.name,ex.id);}
-function stopRest(){cancelSnd();rest=null;$('#rest').hidden=true;}
+function stopRest(){cancelSnd();rest=null;ls.del('cf:rest');$('#rest').hidden=true;}
 function tick(){
   if(rest){
     var left=Math.ceil((rest.end-Date.now())/1000);
     if(left<=0){
-      if(!rest.done){rest.done=true;rest.hideAt=Date.now()+7000;beep();}
+      if(!rest.done){rest.done=true;rest.hideAt=Date.now()+7000;ls.del('cf:rest');beep();}
       $('#restL').textContent='Descanso terminado';$('#restN').textContent='0:00';$('#restP').style.width='100%';$('#rest').classList.add('end');
       if(Date.now()>rest.hideAt)stopRest();
     }else{
@@ -1443,7 +1450,7 @@ function render(force){
   var fn={inicio:vInicio,hoy:vHoy,plan:vPlan,ex:vEx,prog:vProg,soc:vSoc,metas:vMetas,perfil:vPerfil}[S.tab]||vHoy;
   if(S.wz&&S.tab==='hoy')fn=function(){return '<div class="pagehead"><p class="eyebrow">Asistente</p><h1>Tu rutina</h1></div>'+wzHTML();};
   VIEW.innerHTML=subNav()+fn();
-  var foc=S.tab==='hoy'&&S.draft&&!S.min;
+  var foc=S.tab==='hoy'&&S.draft&&!S.min&&!S.stale;
   var kbc=document.body.classList.contains('kb');document.body.className=((S.tab==='hoy'&&S.draft&&S.draft.kind)?'t-'+S.draft.kind:'')+(foc?' focus':'')+(S.draft&&S.tab!=='hoy'?' has-tbar':'')+(kbc?' kb':'');
   renderNav();
   afterRender();
@@ -1521,14 +1528,14 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=50,verT=0;
+var APP_VER=51,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
     if(m&&+m[1]>APP_VER&&!$('#updb')){var u=document.createElement('div');u.id='updb';u.className='upd';u.innerHTML='<span>Hay una versión nueva</span> <button data-act="reload-app">Actualizar</button>';document.body.appendChild(u);}}catch(e){}
 }
 setTimeout(checkVer,6000);document.addEventListener('visibilitychange',function(){if(!document.hidden)checkVer();});
-document.addEventListener('visibilitychange',function(){if(!document.hidden){pollReqs();unlockAudio();if(rest&&!rest.done)schedSnd();syncWake();}});
+document.addEventListener('visibilitychange',function(){if(!document.hidden){if(S.draft&&!S.stale){checkStale();if(S.stale){stopRest();render(true);}}pollReqs();unlockAudio();if(rest&&!rest.done)schedSnd();syncWake();}});
 function renderStatus(){
   var el=$('#status');
   if(!navigator.onLine){el.textContent='Sin conexión';return;}
@@ -1552,6 +1559,7 @@ function sessInfo(r){
 }
 function vHoy(){
   var rt=routine(),d=S.draft,wk=weekKeys(),sug=nextKey();
+  if(d&&S.stale)return staleHTML(d);
   if(d&&!S.min)return vTrain(d);
   var h='<div class="pagehead flex"><div><p class="eyebrow">'+esc(dateLong())+'</p><h1>Entrenar</h1></div>'+ringHTML(rt,wk)+'</div>';
   var stk=streakWeeks();if(stk>=2)h+='<p class="stk"><b>'+stk+' semanas seguidas</b> entrenando al menos 2 veces. ¡No rompas la racha!</p>';
@@ -2432,10 +2440,13 @@ var ACT={
   'xn-open':function(b){S.draft.items[+b.dataset.i].sn='';render(true);var t=VIEW.querySelector('[data-xn="'+b.dataset.i+'"]');if(t)t.focus();},
   'news-go':function(){S.tab='soc';S.soc.sub='feed';render(true);window.scrollTo(0,0);},
   'reload-app':function(){if(S.draft)saveDraft();location.reload();},
+  'stale-keep':function(){S.stale=false;S.draft.startedAt=Date.now();saveDraft();render(true);},
+  'stale-save':function(){S.stale=false;S.draft.startedAt=Date.now()-60000;saveDraft();finish();},
+  'stale-drop':function(){S.stale=false;S.draft=null;S.min=false;saveDraft();stopRest();render(true);},
   undo:function(){var f=undoFn;undoFn=null;$('#toast').hidden=true;if(f)f();},
   finish:function(){finish();},
   discard:function(){S.draft=null;S.min=false;saveDraft();stopRest();S.pendingSwitch=null;render(true);},
-  'rest-add':function(){if(rest){rest.end+=30000;rest.total+=30;rest.done=false;$('#rest').classList.remove('end');schedSnd();tick();}},
+  'rest-add':function(){if(rest){rest.end+=30000;rest.total+=30;rest.done=false;persistRest();$('#rest').classList.remove('end');schedSnd();tick();}},
   'rest-skip':function(){stopRest();},
   'timer-open':function(b){
     if(b.dataset.ex)openTimer(restFor(exOf(b.dataset.ex)),b.dataset.ex);
@@ -2858,7 +2869,7 @@ document.addEventListener('focusout',function(){if(S.dirty)setTimeout(function()
 /* ---------- arranque ---------- */
 S.cfg=normCfg(ls.get('cf:cfg'));
 S.sessions=(ls.get('cf:sessions')||[]).filter(function(x){return x&&x.date;}).sort(byDateDesc);
-var dr=ls.get('cf:draft');if(dr&&Array.isArray(dr.items))S.draft=dr;
+var dr=ls.get('cf:draft');if(dr&&Array.isArray(dr.items))S.draft=dr;checkStale();restoreRest();
 S.mode='init';rebuildEx();renderStatus();render(true);
 
 /* iPhone: al abrir y cerrar el teclado el menú inferior podía quedarse a media pantalla */
