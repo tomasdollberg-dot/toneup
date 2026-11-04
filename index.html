@@ -327,6 +327,7 @@ section.ex{scroll-margin-top:70px}
 .cal-d{font-style:normal;position:relative;height:36px;line-height:36px;border-radius:50%;font-size:13px;font-family:var(--font-num);color:var(--muted)}.cal-d.today{box-shadow:inset 0 0 0 1.5px var(--ink);color:var(--ink)}
 .cal-d.on{background:var(--blue);color:var(--on-color);font-weight:700}.cal-d.on.k-piernas{background:var(--red)}.cal-d.on.k-pull{background:var(--green)}.cal-d sup{position:absolute;top:0;right:2px;font-size:9px;line-height:1}
 .coach{border:1.5px solid var(--blue)}.coach ol{margin:8px 0;padding-left:20px;font-size:14px;line-height:1.5}.coach .meta{margin:0 0 10px}
+.ache-l{display:block;width:100%;margin-top:6px;min-height:44px;font-size:14px;font-weight:600;text-align:center}.pk.on{border-color:var(--green);background:color-mix(in srgb,var(--green) 12%,var(--surface))}.pk[disabled]{opacity:.55}
 .seg{display:flex;gap:4px;padding:4px;margin:0 0 14px;background:var(--raised);border-radius:14px}.seg button{flex:1;min-height:40px;border:0;border-radius:11px;background:transparent;color:var(--muted);font-weight:700;font-size:15px}.seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .tab[aria-current="page"]{color:var(--bg);background:var(--ink)}
 .tundo{border:0;background:transparent;color:var(--gold,#f5c542);font:inherit;font-weight:800;margin-left:8px;padding:4px 6px;text-decoration:underline}
@@ -1529,7 +1530,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=53,verT=0;
+var APP_VER=54,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -1590,7 +1591,7 @@ function vHoy(){
   var key=S.sel&&rt.some(function(r){return r.key===S.sel;})?S.sel:sug,cur=rt.find(function(r){return r.key===key;})||rt[0];
   h+='<section class="card hero k-'+cur.kind+'"><p class="eyebrow" style="margin:0 0 4px">'+(key===sug?'Siguiente sesión':'Sesión elegida')+'</p><h3 class="hero-n">'+esc(cur.name)+'</h3><p class="meta">'+esc(sessInfo(cur))+'</p>'
     +'<ul class="hero-l">'+cur.items.slice(0,8).map(function(it){return '<li><span>'+esc(exOf(it.id).name)+'</span><b class="num">'+it.sets+'×</b></li>';}).join('')+(cur.items.length>8?'<li class="more">y '+(cur.items.length-8)+' más…</li>':'')+'</ul>'
-    +'<button class="btn sc block big" data-act="pick" data-k="'+esc(cur.key)+'">Empezar rutina</button><button class="btn block" style="margin-top:8px;min-height:48px" data-act="rt-edit" data-k="'+esc(cur.key)+'">Editar rutina</button></section>';
+    +'<button class="btn sc block big" data-act="pick" data-k="'+esc(cur.key)+'">Empezar rutina</button><button class="btn block" style="margin-top:8px;min-height:48px" data-act="rt-edit" data-k="'+esc(cur.key)+'">Editar rutina</button><button class="lnk ache-l" data-act="ache-open" data-k="'+esc(cur.key)+'">'+(achActive()?'Molestia activa: '+esc((AQZ.find(function(z){return z[0]===achActive().zone;})||[0,''])[1])+' · revisar':'¿Te molesta algo hoy?')+'</button></section>';
   h+='<div class="toolrow"><span class="week-t"><b>'+wk.size+'</b> de '+rt.length+' sesiones esta semana</span></div>';
   if(rt.length>1){
     h+='<p class="eyebrow" style="margin:6px 0 8px">Elegir otra sesión</p><div class="chips">'+rt.map(function(r){
@@ -1650,7 +1651,7 @@ function exHTML(it,i,d){
   });
   h+=it.sn!=null?'<textarea class="xnote" data-xn="'+i+'" rows="2" maxlength="300" placeholder="Nota: ajuste del asiento, molestias, sensaciones…" aria-label="Nota del ejercicio">'+esc(it.sn)+'</textarea>':'<button class="lnk xn-add" data-act="xn-open" data-i="'+i+'">+ Añadir nota</button>';
   h+='<button class="addset" data-act="add-set" data-i="'+i+'">+ Añadir serie ('+clock(rs)+')</button>';
-  h+='<div class="ex-f"><button class="btn sm" data-act="swap-open" data-mode="draft" data-i="'+i+'">Cambiar ejercicio</button>'+(it.sets.length>1?'<button class="btn sm" data-act="del-set" data-i="'+i+'" aria-label="Quitar última serie">'+ic(I.minus,16)+'Quitar serie</button>':'')+cbtn('rm:'+i,'Quitar ejercicio','btn sm','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+platesHTML(it,d)+'</div>';
+  h+='<div class="ex-f"><button class="btn sm" data-act="swap-open" data-mode="draft" data-i="'+i+'">Cambiar ejercicio</button><button class="btn sm" data-act="ache-ex" data-i="'+i+'">Me duele</button>'+(it.sets.length>1?'<button class="btn sm" data-act="del-set" data-i="'+i+'" aria-label="Quitar última serie">'+ic(I.minus,16)+'Quitar serie</button>':'')+cbtn('rm:'+i,'Quitar ejercicio','btn sm','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+platesHTML(it,d)+'</div>';
   return h+'</section>';
 }
 
@@ -2338,7 +2339,55 @@ function openSwap(mode,key,i){
   S.swap={mode:mode,k:key,i:i,id:it.id,eq:'',care:{back:false,knees:false,shoulders:false},taken:list.map(function(x){return x.id;})};
   renderSwap();
 }
-function closePicker(){S.swap=null;S.picker=null;S.timer=null;$('#picker').innerHTML='';afterRender();}
+function closePicker(){S.aq=null;S.swap=null;S.picker=null;S.timer=null;$('#picker').innerHTML='';afterRender();}
+
+
+/* ---------- molestias: cambiar los ejercicios que más cargan una zona ---------- */
+var AQZ=[['knees','Rodilla'],['back','Espalda baja'],['shoulders','Hombro'],['other','Otra zona']],AQL=[['l','Leve'],['m','Me duele al moverla'],['f','Fuerte o punzante']];
+function achActive(){var a=ls.get('cf:ache');return a&&a.until>Date.now()?a:null;}
+var AQX={shoulders:/press de hombro|press arnold|press militar|fondos/i};
+function riskyFor(e,zone){var av=window.CF_ASIS&&CF_ASIS.AVOID||{};return zone!=='other'&&((av[zone]||[]).indexOf(e.id)>=0||(CARE_RX[zone]&&CARE_RX[zone].test(e.name))||(AQX[zone]&&AQX[zone].test(e.name)));}
+function subsFor(cur,zone,taken){var care={back:false,knees:false,shoulders:false};if(care.hasOwnProperty(zone))care[zone]=true;return swapCands(cur,{eq:'',care:care},taken).filter(function(e){return !(AQX[zone]&&AQX[zone].test(e.name));});}
+function openAche(mode,key,i,preset){
+  S.picker=null;S.timer=null;S.swap=null;
+  var a=preset||{};S.aq={mode:mode,key:key,i:i,zone:a.zone||null,lvl:a.lvl||null,rem:!!preset,off:{}};renderAche();
+}
+function aqItems(a){return a.mode==='ex'?[S.draft.items[a.i]]:(routine().find(function(r){return r.key===a.key;})||{items:[]}).items;}
+function aqRows(a){
+  var items=aqItems(a),taken=(a.mode==='ex'?S.draft.items:items).map(function(x){return x.id;}),rows=[];
+  items.forEach(function(it,k){var e=exOf(it.id),idx=a.mode==='ex'?a.i:k;
+    if(a.mode==='ex'){rows.push({idx:idx,it:it,e:e,subs:subsFor(e,a.zone,taken).slice(0,4)});return;}
+    if(!riskyFor(e,a.zone))return;var sb=subsFor(e,a.zone,taken);rows.push({idx:idx,it:it,e:e,subs:sb.slice(0,1)});});
+  return rows;
+}
+function renderAche(){
+  var a=S.aq;if(!a)return;var h='<div class="sheet-bg" data-act="pk-close"></div><div class="sheet ti" role="dialog" aria-label="Molestias"><div class="sheet-in"><div class="grab"></div><div class="sheet-h"><strong>'+(a.mode==='ex'?'Me duele con este ejercicio':'¿Te molesta algo hoy?')+'</strong><button class="ico" data-act="pk-close" aria-label="Cerrar">'+ic(I.x,20)+'</button></div>';
+  h+='<p class="eyebrow" style="margin:4px 0 0">¿Dónde?</p><div class="tpre">'+AQZ.map(function(z){return '<button class="gc'+(a.zone===z[0]?' on':'')+'" data-act="aq-z" data-v="'+z[0]+'">'+z[1]+'</button>';}).join('')+'</div>';
+  h+='<p class="eyebrow" style="margin:4px 0 0">¿Cuánto?</p><div class="tpre">'+AQL.map(function(z){return '<button class="gc'+(a.lvl===z[0]?' on':'')+'" data-act="aq-l" data-v="'+z[0]+'">'+z[1]+'</button>';}).join('')+'</div>';
+  if(!a.zone||!a.lvl)h+='<p class="meta">Elige la zona y la intensidad y te propongo cambios.</p>';
+  else if(a.lvl==='f')h+='<div class="alert"><span><b>Para con esa zona.</b> Un dolor fuerte, punzante, con hinchazón o que no se te pasa no es para entrenarlo. Descansa y consúltalo con un profesional sanitario. Puedes entrenar otras zonas.</span></div>';
+  else if(a.zone==='other')h+='<p class="meta">Para esta zona no tengo una lista de ejercicios de riesgo. Cambia lo que te moleste con «Cambiar ejercicio», baja el peso y para si el dolor aumenta.</p><div class="prow-b">'+(a.mode==='pre'?'<button class="btn primary" data-act="aq-go">Empezar la sesión</button>':'')+'</div>';
+  else{
+    var rows=aqRows(a);
+    if(a.mode==='ex'){
+      h+=rows[0]&&rows[0].subs.length?'<p class="meta">Alternativas a <b>'+esc(rows[0].e.name)+'</b> que cargan menos esa zona:</p><div class="swl">'+rows[0].subs.map(function(e){return '<button class="pk" data-act="aq-pick" data-id="'+esc(e.id)+'"><span>'+esc(e.name)+'<br><small>'+esc(e.eq)+'</small></span><span class="mini">Cambiar</span></button>';}).join('')+'</div>':'<div class="card empty">No encuentro una alternativa. Baja el peso o pasa al siguiente ejercicio.</div>';
+    }else if(!rows.length)h+='<p class="meta">Ningún ejercicio de esta sesión carga mucho esa zona. Entrena con normalidad, sube el peso con calma y para si duele más.</p><div class="prow-b"><button class="btn primary" data-act="aq-go">Empezar la sesión</button></div>';
+    else{
+      h+='<p class="meta">Estos ejercicios de hoy cargan esa zona. Toca para elegir cuáles cambiar:</p><div class="swl">'+rows.map(function(x){var on=!a.off[x.idx]&&x.subs.length;return '<button class="pk'+(on?' on':'')+'" data-act="aq-t" data-i="'+x.idx+'"'+(x.subs.length?'':' disabled')+'><span>'+esc(x.e.name)+'<br><small>'+(x.subs.length?'→ '+esc(x.subs[0].name):'sin alternativa parecida')+'</small></span><span class="mini">'+(on?'Cambiar':'Dejar')+'</span></button>';}).join('')+'</div>';
+      h+='<div class="prow-b"><button class="btn primary" data-act="aq-go">Empezar con estos cambios</button><button class="btn" data-act="aq-skip">Empezar sin cambios</button></div>';
+    }
+    if(a.lvl==='m')h+='<p class="meta">Con molestia al moverla: baja el peso y para si aumenta.</p>';
+    if(a.mode==='pre')h+='<label class="chk"><input type="checkbox" data-aqrem'+(a.rem?' checked':'')+'><span>Recordar 7 días y preguntarme al empezar</span></label>';
+  }
+  h+='<p class="meta">Se guarda solo en tu móvil y no se comparte. Es una ayuda general y no sustituye a un profesional.</p></div></div>';
+  $('#picker').innerHTML=h;
+}
+function aqSaveRemember(){var a=S.aq;if(a&&a.rem&&a.zone&&a.lvl&&a.lvl!=='f')ls.set('cf:ache',{zone:a.zone,lvl:a.lvl,until:Date.now()+7*864e5});else if(a&&a.mode==='pre')ls.del('cf:ache');}
+function swapHurt(i,nid){
+  var d=S.draft,it=d.items[i],done=it.sets.filter(function(x){return x.done;});
+  if(done.length){var left=Math.max(1,it.sets.length-done.length);it.sets=done;d.items.splice(i+1,0,{id:nid,reps:it.reps||'',last:null,note:'',sets:Array.from({length:left},function(){return emptySet();})});}
+  else{it.id=nid;it.last=null;it.sets=it.sets.map(function(){return emptySet();});}
+}
 
 /* ---------- temporizador de descanso ---------- */
 function clampSec(v){return Math.max(10,Math.min(900,Math.round(v)));}
@@ -2404,7 +2453,7 @@ async function exportCsv(){
 }
 var ACT={
   tab:function(b){S.pers=null;S.fp=null;if(S.soc){S.soc.avPrev=null;if(b.dataset.t!=='soc')S.soc.newsView=[];}var nt=b.dataset.t;S.scr=S.scr||{};S.scr[S.tab]=window.scrollY;var same=nt===S.tab;S.tab=nt;S.editKey=null;closePicker();render(true);window.scrollTo(0,same?0:(S.scr[nt]||0));if(!same){VIEW.classList.remove('view-in');void VIEW.offsetWidth;VIEW.classList.add('view-in');}},
-  pick:function(b){var k=b.dataset.k;if(S.draft&&S.draft.key===k){S.min=false;render(true);return;}if(S.draft&&draftProgress(S.draft)>0){S.pendingSwitch=k;S.min=true;render(true);return;}startDraft(k);},
+  pick:function(b){var k=b.dataset.k;var ac=achActive();if(ac&&!(S.draft&&S.draft.key===k)&&!(S.aqAsked&&S.aqAsked[k])){S.aqAsked=S.aqAsked||{};S.aqAsked[k]=1;openAche('pre',k,null,{zone:ac.zone,lvl:ac.lvl});return;}if(S.draft&&S.draft.key===k){S.min=false;render(true);return;}if(S.draft&&draftProgress(S.draft)>0){S.pendingSwitch=k;S.min=true;render(true);return;}startDraft(k);},
   'switch-yes':function(){startDraft(S.pendingSwitch);},
   'switch-no':function(){S.pendingSwitch=null;S.min=false;render(true);},
   sel:function(b){S.sel=b.dataset.k;render(true);},
@@ -2451,6 +2500,18 @@ var ACT={
   'stale-keep':function(){S.stale=false;S.draft.startedAt=Date.now();saveDraft();render(true);},
   'stale-save':function(){S.stale=false;S.draft.startedAt=Date.now()-60000;saveDraft();finish();},
   'stale-drop':function(){S.stale=false;S.draft=null;S.min=false;saveDraft();stopRest();render(true);},
+  'ache-open':function(b){var a=achActive();openAche('pre',b.dataset.k,null,a?{zone:a.zone,lvl:a.lvl}:null);},
+  'ache-ex':function(b){var it=S.draft.items[+b.dataset.i],e=exOf(it.id),z=null;['knees','back','shoulders'].forEach(function(k){if(!z&&riskyFor(e,k))z=k;});var a=achActive();openAche('ex',null,+b.dataset.i,{zone:z||(a&&a.zone)||null,lvl:null});S.aq.rem=false;renderAche();},
+  'aq-z':function(b){S.aq.zone=b.dataset.v;S.aq.off={};renderAche();},
+  'aq-l':function(b){S.aq.lvl=b.dataset.v;renderAche();},
+  'aq-t':function(b){var i=b.dataset.i;S.aq.off[i]=!S.aq.off[i];renderAche();},
+  'aq-skip':function(){var a=S.aq;aqSaveRemember();closePicker();startDraft(a.key);},
+  'aq-go':function(){
+    var a=S.aq;aqSaveRemember();var rows=a.zone&&a.zone!=='other'&&a.lvl!=='f'?aqRows(a):[];closePicker();startDraft(a.key);
+    var n=0;rows.forEach(function(x){if(!a.off[x.idx]&&x.subs.length){var it=S.draft.items[x.idx];if(it){it.id=x.subs[0].id;it.last=null;it.sets=it.sets.map(function(){return emptySet();});n++;}}});
+    if(n){saveDraft();render(true);toast(n===1?'Cambiado 1 ejercicio.':'Cambiados '+n+' ejercicios.');}
+  },
+  'aq-pick':function(b){var a=S.aq;swapHurt(a.i,b.dataset.id);saveDraft();closePicker();render(true);toast('Cambiado por '+exOf(b.dataset.id).name+'.');},
   'coach-ok':function(){ls.set('cf:coach',1);render(true);},
   undo:function(){var f=undoFn;undoFn=null;$('#toast').hidden=true;if(f)f();},
   finish:function(){finish();},
@@ -2840,6 +2901,7 @@ document.addEventListener('click',function(e){
 });
 document.addEventListener('input',function(e){
   var t=e.target;
+  if(t.dataset&&t.dataset.aqrem!==undefined&&S.aq){S.aq.rem=t.checked;return;}
   if(t.dataset&&t.dataset.he&&S.hdraft){var q=t.dataset.he.split(':');S.hdraft.items[+q[0]].sets[+q[1]][q[2]]=t.value;return;}
   if(t.dataset&&t.dataset.xn!=null&&S.draft){S.draft.items[+t.dataset.xn].sn=t.value;saveDraft();return;}
   if(t.dataset&&t.dataset.f&&S.draft){
