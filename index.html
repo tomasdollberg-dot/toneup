@@ -950,6 +950,17 @@ function onSignedOut(){
   S.cfg=normCfg(ls.get('cf:cfg'));S.sessions=(ls.get('cf:sessions')||[]).filter(function(x){return x&&x.date;}).sort(byDateDesc);
   S.soc=newSoc();rebuildEx();renderStatus();render(true);
 }
+/* instalación como app: botón directo donde el navegador lo permite (Android, Chrome de ordenador) */
+var pwaEv=null;
+function isStandalone(){try{return (window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;}catch(e){return false;}}
+function pwaHTML(){
+  if(isStandalone())return '';
+  if(pwaEv)return '<button class="btn" style="margin-top:12px;width:100%" data-act="pwa-install">Instalar Tone Up en este dispositivo</button>';
+  return '<p class="meta" style="margin-top:8px"><a href="instalar.html">¿Cómo la instalo en mi móvil?</a></p>';
+}
+function pwaRefresh(){var s=document.getElementById('pwa-slot');if(s)s.innerHTML=pwaHTML();}
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pwaEv=e;pwaRefresh();});
+window.addEventListener('appinstalled',function(){pwaEv=null;pwaRefresh();toast('Tone Up instalada. Ábrela desde tu pantalla de inicio.');});
 var initP=null;
 async function boot(){
   var cfgd=!!(CFG.SUPABASE_URL&&CFG.SUPABASE_ANON_KEY);
@@ -1302,7 +1313,7 @@ function vAuth(){
    +'<div class="form">'+(m==='up'?'<label class="field">Nombre<input id="au-first" type="text" maxlength="30" autocomplete="given-name"></label><label class="field">Apellidos<input id="au-last" type="text" maxlength="40" autocomplete="family-name"></label>':'')+'<label class="field wide">Correo electrónico<input id="au-email" type="email" autocomplete="email" inputmode="email"></label><label class="field wide">Contraseña (mínimo 8 caracteres)<input id="au-pass" type="password" autocomplete="'+(m==='up'?'new-password':'current-password')+'"></label>'+(m==='up'?birthHTML('au'):'')+'</div>'
    +(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')
    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="'+(m==='up'?'au-up':'au-in')+'">'+(m==='up'?'Crear cuenta':'Entrar')+'</button><button class="btn" data-act="au-magic">Enviarme un enlace por correo</button></div>'
-   +'<p class="meta" style="margin-top:14px">Tus entrenamientos son privados salvo que los compartas con amigos que tú aceptes.</p><p class="meta" style="margin-top:8px"><a href="instalar.html">¿Cómo la instalo en mi móvil?</a></p></div>';
+   +'<p class="meta" style="margin-top:14px">Tus entrenamientos son privados salvo que los compartas con amigos que tú aceptes.</p><div id="pwa-slot">'+pwaHTML()+'</div></div>';
   return h;
 }
 function gName(){try{var m=(me&&me.user_metadata)||{};return String(m.first_name||m.full_name||m.name||'').trim().slice(0,40);}catch(e){return '';}}
@@ -1552,7 +1563,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=62,verT=0;
+var APP_VER=63,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -2641,6 +2652,7 @@ var ACT={
   'ex-add-plan':function(b){editRoutine(function(rt){var r=rt.find(function(x){return x.key===b.dataset.k;});if(r)r.items.push({id:b.dataset.id,sets:3,last:null,note:''});});toast('Añadido al plan.');},
 
   'au-mode':function(b){S.authMode=b.dataset.v;S.authMsg='';render(true);},
+  'pwa-install':function(){if(!pwaEv)return;var e=pwaEv;e.prompt();e.userChoice.then(function(){pwaEv=null;pwaRefresh();});},
   'au-open':function(){S.mode='auth';render(true);},
   'au-in':async function(){
     var e=($('#au-email').value||'').trim(),p=$('#au-pass').value||'';
