@@ -397,7 +397,7 @@ section.ex{scroll-margin-top:70px}
 .grab{width:42px;height:5px;border-radius:99px;background:var(--line);margin:0 auto 2px}
 .sheet-h{display:flex;align-items:center;justify-content:space-between}
 .sheet-h strong{font-family:var(--font-display);font-size:24px;text-transform:uppercase;letter-spacing:.05em}
-#plist{overflow-y:auto;min-height:0}
+#plist{overflow-y:auto;min-height:min(46dvh,340px)}
 .pk{width:100%;border:0;border-bottom:1px solid var(--line-soft);background:transparent;text-align:left;padding:11px 4px;display:flex;justify-content:space-between;gap:10px;align-items:center}
 .pk small{color:var(--muted);font-size:12.5px}
 .tdisp{font-size:64px;font-weight:600;text-align:center;line-height:1;padding:6px 0 2px}
@@ -1532,7 +1532,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=57,verT=0;
+var APP_VER=58,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -1926,16 +1926,29 @@ function vPlan(){
   return h;
 }
 
+/* búsqueda de ejercicios: sin tildes ni mayúsculas y tolerante a erratas */
+function fold(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+function lev(a,b,max){if(Math.abs(a.length-b.length)>max)return max+1;var p=[],i,j;for(j=0;j<=b.length;j++)p[j]=j;for(i=1;i<=a.length;i++){var c=[i],m=i;for(j=1;j<=b.length;j++){c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));if(c[j]<m)m=c[j];}if(m>max)return max+1;p=c;}return p[b.length];}
+function exHit(e,q){
+  var hay=fold(e.name+' '+e.grp+' '+e.eq+' '+(e.sec||'')+' '+(e.alias||'')),words=null;
+  return q.split(/\s+/).every(function(w){
+    if(hay.indexOf(w)>=0)return true;
+    if(w.length<4)return false;
+    if(!words)words=hay.split(/[^a-z0-9ñ]+/).filter(Boolean);
+    var tol=w.length>=8?2:1;
+    return words.some(function(x){return x.length>=3&&(lev(w,x,tol)<=tol||(x.length>w.length&&lev(w,x.slice(0,w.length),tol)<=tol));});
+  });
+}
 function matchEx(e){
-  var q=S.q.trim().toLowerCase();
+  var q=fold(S.q.trim());
   if(!inGrp(e.grp,S.grp))return false;
   if(S.eq!=='Todos'&&e.eq!==S.eq)return false;
-  if(q){var hay=(e.name+' '+e.grp+' '+e.eq+' '+(e.sec||'')+' '+(e.alias||'')).toLowerCase();return q.split(/\s+/).every(function(w){return hay.indexOf(w)>=0;});}
+  if(q)return exHit(e,q);
   return true;
 }
 function exListHTML(){
   var list=Array.from(EX.values()).filter(matchEx);
-  if(!list.length)return '<div class="card empty">No hay ejercicios con ese filtro. Prueba otra palabra o crea uno nuevo.</div>';
+  if(!list.length)return '<div class="card empty"><strong>No hay resultados</strong><br><small>Prueba con otra palabra, revisa la ortografía o crea el ejercicio.</small></div>';
   var order=GROUPS.concat(['Otros']);
   list.sort(function(a,b){var ga=order.indexOf(a.grp),gb=order.indexOf(b.grp);ga=ga<0?99:ga;gb=gb<0?99:gb;return ga-gb||a.name.localeCompare(b.name,'es');});
   var h='',cur=null;
@@ -2290,9 +2303,9 @@ function vMetas(){
 
 /* ---------- selector de ejercicios ---------- */
 function pickerListHTML(){
-  var q=S.pq.trim().toLowerCase();
-  var list=Array.from(EX.values()).filter(function(e){if(!q)return true;var hay=(e.name+' '+e.grp+' '+e.eq+' '+(e.alias||'')).toLowerCase();return q.split(/\s+/).every(function(w){return hay.indexOf(w)>=0;});}).sort(function(a,b){return a.name.localeCompare(b.name,'es');}).slice(0,70);
-  if(!list.length)return '<p class="empty">Sin resultados.</p>';
+  var q=fold(S.pq.trim());
+  var list=Array.from(EX.values()).filter(function(e){return !q||exHit(e,q);}).sort(function(a,b){return a.name.localeCompare(b.name,'es');}).slice(0,70);
+  if(!list.length)return '<div class="empty"><strong>No hay resultados</strong><br><small>Prueba con otra palabra o revisa la ortografía.</small></div>';
   return list.map(function(e){return '<button class="pk" data-act="pk-add" data-id="'+esc(e.id)+'"><span>'+esc(e.name)+'<br><small>'+esc(e.grp)+' · '+esc(e.eq)+'</small></span>'+ic(I.plus,18)+'</button>';}).join('');
 }
 function openPicker(mode,key){
