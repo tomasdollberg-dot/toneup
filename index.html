@@ -1315,7 +1315,7 @@ async function saveFile(name,data,mime){
 }
 async function exportBackup(){
   var j=JSON.stringify({app:'tone-up',v:1,exported:new Date().toISOString(),cfg:S.cfg,sessions:S.sessions.map(function(s){var c=clone(s);delete c.shared;return c;})});
-  if(await saveFile('tone-up-copia.json',j,'application/json'))toast('Copia lista.');
+  if(await saveFile('tone-up-copia.json',j,'application/json')){ls.set('cf:lastbk',Date.now());S.bkOff=true;toast('Copia lista.');render(true);}
 }
 async function importBackup(file){
   if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
@@ -1528,7 +1528,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=51,verT=0;
+var APP_VER=52,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -1557,11 +1557,17 @@ function sessInfo(r){
   var n=r.items.length,min=window.CF_ASIS?CF_ASIS.minutes(r.items,exOf):0;
   return n+(n===1?' ejercicio':' ejercicios')+(min?' · unos '+min+' min':'');
 }
+function bkDue(){
+  if(S.bkOff||S.sessions.length<3)return false;var now=Date.now(),snz=ls.get('cf:bksnz')||0;if(now<snz)return false;
+  var base=ls.get('cf:lastbk')||ls.get('cf:bkbase');if(!base){ls.set('cf:bkbase',now);return false;}
+  return now-base>30*864e5;
+}
 function vHoy(){
   var rt=routine(),d=S.draft,wk=weekKeys(),sug=nextKey();
   if(d&&S.stale)return staleHTML(d);
   if(d&&!S.min)return vTrain(d);
   var h='<div class="pagehead flex"><div><p class="eyebrow">'+esc(dateLong())+'</p><h1>Entrenar</h1></div>'+ringHTML(rt,wk)+'</div>';
+  if(bkDue())h+='<div class="alert"><span><b>Copia de seguridad.</b> Hace más de un mes que no guardas una. Descárgala para no perder tu historial.</span><div><button class="btn sm primary" data-act="bk-export">Descargar</button><button class="btn sm" data-act="bk-later">Más tarde</button></div></div>';
   var stk=streakWeeks();if(stk>=2)h+='<p class="stk"><b>'+stk+' semanas seguidas</b> entrenando al menos 2 veces. ¡No rompas la racha!</p>';
   if(S.summary){
     var s=S.summary;
@@ -2214,7 +2220,7 @@ function vProg(){
     }
     h+='</article>';
   });
-  h+='<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="export">Exportar a CSV</button><button class="btn" data-act="bk-export">Copia completa (JSON)</button></div>';
+  h+='<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="export">Exportar a CSV</button><button class="btn" data-act="bk-export">Copia completa (JSON)</button><button class="btn" data-act="bk-import">Importar copia</button></div>';
   return h;
 }
 
@@ -2632,6 +2638,7 @@ var ACT={
     s.shared=nv;render(true);toast(nv?'Sesión compartida con tus amigos.':'Sesión privada.');
   },
   'bk-export':function(){exportBackup();},
+  'bk-later':function(){ls.set('cf:bksnz',Date.now()+14*864e5);S.bkOff=true;render(true);},
   'bk-import':function(){var f=$('#impfile');if(f)f.click();},
   'hist-open':function(b){S.openHist=S.openHist===b.dataset.id?null:b.dataset.id;render(true);},
   'hist-del':async function(b){var id=b.dataset.id,had=S.sessions.some(function(x){return x.id===id;});await deleteSession(id);var gone=!S.sessions.some(function(x){return x.id===id;});if(gone&&had){S.openHist=null;if(S.summary&&S.summary.id===id)S.summary=null;if(S.soc&&S.soc.openC&&S.soc.openC.indexOf('|'+id)>0)S.soc.openC=null;toast('Sesión eliminada.');}render(true);},
