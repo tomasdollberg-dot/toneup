@@ -972,6 +972,10 @@ window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pwa
 window.addEventListener('appinstalled',function(){pwaEv=null;pwaRefresh();toast('Tone Up instalada. Ábrela desde tu pantalla de inicio.');});
 var initP=null;
 async function boot(){
+  try{var hs=location.hash||'';
+    if(/type=recovery/.test(hs))S.recovery=true;
+    else if(/error_code=|error_description=/.test(hs)){S.webOk=true;S.authMode='forgot';S.authMsg=/otp_expired|expired/i.test(hs)?'Ese enlace ha caducado o ya se usó. Pide uno nuevo aquí abajo.':'No se pudo abrir el enlace. Pide uno nuevo aquí abajo.';history.replaceState(null,'',location.pathname+location.search);}
+  }catch(e0){}
   var cfgd=!!(CFG.SUPABASE_URL&&CFG.SUPABASE_ANON_KEY);
   if(cfgd&&!window.supabase){ /* la librería no cargó (red lenta o bloqueada): reintento por otra vía, nunca entrar sin cuenta */
     await new Promise(function(ok){var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2.57.4/dist/umd/supabase.js';s.onload=s.onerror=function(){ok();};document.head.appendChild(s);});
@@ -981,6 +985,7 @@ async function boot(){
   try{
     sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
     sb.auth.onAuthStateChange(function(ev,session){
+      if(ev==='PASSWORD_RECOVERY'){S.recovery=true;S.authMsg='';if(me)render(true);}
       if(ev==='SIGNED_OUT'){if(me)onSignedOut();}
       else if(session&&session.user&&(!me||me.id!==session.user.id)){setTimeout(function(){onSignedIn(session.user);},0);}
     });
@@ -1316,11 +1321,18 @@ function vSoc(){
   else h+=friendsHTML();
   return h;
 }
+function vRecovery(){
+  return '<div class="pagehead"><p class="eyebrow">Tone Up</p><h1>Nueva contraseña</h1></div><div class="card auth"><p class="meta" style="margin:0 0 10px">Elige una contraseña nueva para tu cuenta.</p><div class="form"><label class="field wide">Contraseña nueva (mínimo 8 caracteres)<input id="rc-p1" type="password" autocomplete="new-password"></label><label class="field wide">Repite la contraseña<input id="rc-p2" type="password" autocomplete="new-password"></label></div>'+(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')+'<button class="btn primary" data-act="rec-save">Guardar contraseña</button></div>';
+}
+function vForgot(){
+  return '<div class="pagehead"><p class="eyebrow">Tone Up</p><h1>Recuperar contraseña</h1></div><div class="card auth"><p class="meta" style="margin:0 0 10px">Escribe el correo de tu cuenta y te enviamos un enlace para elegir una contraseña nueva.</p><div class="form"><label class="field wide">Correo electrónico<input id="au-email" type="email" autocomplete="email" inputmode="email"></label></div>'+(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="au-forgot-send">Enviarme el enlace</button><button class="btn" data-act="au-mode" data-v="in">Volver</button></div><p class="meta" style="margin-top:14px">Si te registraste con Google, no tienes contraseña: entra con «Continuar con Google».</p></div>';
+}
 function vAuth(){
+  if(S.authMode==='forgot'&&!S.noLib)return vForgot();
   if(!S.noLib&&showHero())return heroHTML();
   if(S.noLib)return '<div class="pagehead"><p class="eyebrow">Tone Up</p><h1>Sin conexión</h1></div><div class="card"><p class="amsg" role="alert">'+esc(S.authMsg)+'</p><button class="btn primary" onclick="location.reload()">Reintentar</button></div>';
   var m=S.authMode,h='<div class="pagehead"><p class="eyebrow">Tone Up</p><h1>'+(m==='up'?'Crear cuenta':'Entrar')+'</h1></div><div class="card auth">'+(CFG.GOOGLE?'<button class="gbig" data-act="au-google"><svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z"/><path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg><span>Continuar con Google</span></button><p class="muted" style="font-size:12px;margin:8px 2px 0;text-align:center">La primera vez, Google te enviará un correo de aviso por entrar en Tone Up. Es normal y no tienes que hacer nada.</p><p class="gor"><span>o con tu correo</span></p>':'')+'<div class="pchips"><button class="gc'+(m!=='up'?' on':'')+'" data-act="au-mode" data-v="in">Ya tengo cuenta</button><button class="gc'+(m==='up'?' on':'')+'" data-act="au-mode" data-v="up">Soy nuevo</button></div>'
-   +'<div class="form">'+(m==='up'?'<label class="field">Nombre<input id="au-first" type="text" maxlength="30" autocomplete="given-name"></label><label class="field">Apellidos<input id="au-last" type="text" maxlength="40" autocomplete="family-name"></label>':'')+'<label class="field wide">Correo electrónico<input id="au-email" type="email" autocomplete="email" inputmode="email"></label><label class="field wide">Contraseña (mínimo 8 caracteres)<input id="au-pass" type="password" autocomplete="'+(m==='up'?'new-password':'current-password')+'"></label>'+(m==='up'?birthHTML('au'):'')+'</div>'
+   +'<div class="form">'+(m==='up'?'<label class="field">Nombre<input id="au-first" type="text" maxlength="30" autocomplete="given-name"></label><label class="field">Apellidos<input id="au-last" type="text" maxlength="40" autocomplete="family-name"></label>':'')+'<label class="field wide">Correo electrónico<input id="au-email" type="email" autocomplete="email" inputmode="email"></label><label class="field wide">Contraseña (mínimo 8 caracteres)<input id="au-pass" type="password" autocomplete="'+(m==='up'?'new-password':'current-password')+'"></label>'+(m==='up'?birthHTML('au'):'')+'</div>'+(m!=='up'?'<p style="margin:-2px 0 10px"><button class="linkb" data-act="au-forgot" style="background:none;border:0;padding:6px 0;color:var(--blue);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer">¿Olvidaste tu contraseña?</button></p>':'')
    +(S.authMsg?'<p class="amsg" role="alert">'+esc(S.authMsg)+'</p>':'')
    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="'+(m==='up'?'au-up':'au-in')+'">'+(m==='up'?'Crear cuenta':'Entrar')+'</button><button class="btn" data-act="au-magic">Enviarme un enlace por correo</button></div>'
    +'<p class="meta" style="margin-top:14px">Tus entrenamientos son privados salvo que los compartas con amigos que tú aceptes.</p><div id="pwa-slot">'+pwaHTML()+'</div></div>';
@@ -1488,6 +1500,7 @@ function render(force){
   var a=document.activeElement;
   if(!force&&a&&a!==document.body&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)&&VIEW.contains(a)){S.dirty=true;return;}
   S.dirty=false;if(!S.edit)S.editSnap=null;else editBegin();
+  if(S.recovery){VIEW.innerHTML=vRecovery();$('#nav').innerHTML='';return;}
   if(S.mode==='auth'||(S.mode==='db'&&!prof&&S.cfgReady)){VIEW.innerHTML=S.mode==='auth'?vAuth():vOnboard();document.body.className=document.body.classList.contains('kb')?'kb':'';$('#nav').innerHTML='';return;}
   if(S.mode==='init'){VIEW.innerHTML='<div class="card empty">Conectando…</div>';$('#nav').innerHTML='';return;}
   if(S.mode==='db'&&!S.onb&&needsOnb())S.onb=onbInit();
@@ -1573,7 +1586,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=64,verT=0;
+var APP_VER=65,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -2662,6 +2675,27 @@ var ACT={
   'ex-add-plan':function(b){editRoutine(function(rt){var r=rt.find(function(x){return x.key===b.dataset.k;});if(r)r.items.push({id:b.dataset.id,sets:3,last:null,note:''});});toast('Añadido al plan.');},
 
   'au-mode':function(b){S.authMode=b.dataset.v;S.authMsg='';render(true);},
+  'au-forgot':function(){var e=($('#au-email')||{}).value||'';S.authMode='forgot';S.authMsg='';render(true);var i=$('#au-email');if(i)i.value=e.trim();},
+  'au-forgot-send':async function(){
+    var e=($('#au-email').value||'').trim();
+    if(!e||e.indexOf('@')<1){authShow('Escribe el correo de tu cuenta.',e);return;}
+    authBusy(true);
+    try{var r=await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname});
+      if(r.error){authShow(authErr(r.error),e);return;}
+      authShow('Listo. Si ese correo tiene cuenta, te llegará un enlace en unos minutos (mira también en spam). Ábrelo desde este mismo dispositivo.',e);
+    }catch(x){authShow(authErr(x),e);}
+  },
+  'rec-save':async function(){
+    var a=$('#rc-p1').value||'',b=$('#rc-p2').value||'';
+    if(a.length<8){S.authMsg='La contraseña debe tener al menos 8 caracteres.';render(true);return;}
+    if(a!==b){S.authMsg='Las dos contraseñas no coinciden.';render(true);return;}
+    authBusy(true);
+    try{var r=await sb.auth.updateUser({password:a});
+      if(r.error)throw r.error;
+      S.recovery=false;S.authMsg='';try{history.replaceState(null,'',location.pathname+location.search);}catch(x){}
+      render(true);toast('Contraseña actualizada.');
+    }catch(x){var m=String((x&&x.message)||'').toLowerCase();S.authMsg=m.indexOf('same')>=0?'Elige una contraseña distinta de la anterior.':m.indexOf('password')>=0?'La contraseña debe tener al menos 8 caracteres.':'No se pudo cambiar la contraseña. Pide un enlace nuevo e inténtalo otra vez.';render(true);}
+  },
   'pwa-help':function(){S.pwaHelp=!S.pwaHelp;render(true);},
   'web-ok':function(){S.webOk=true;render(true);},
   'pwa-install':function(){if(!pwaEv)return;var e=pwaEv;e.prompt();e.userChoice.then(function(){pwaEv=null;pwaRefresh();});},
