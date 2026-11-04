@@ -214,12 +214,12 @@ function build(q,H){
     order();
     var xs=s.x.concat(mod.addX).filter(function(m){return !mod.drop[m]&&!mod.cut[m];});
     if(wantCore&&xs.indexOf('Core')<0)xs.unshift('Core');
-    var xi=0,guard=0;
+    var xi=0,guard=0,lastAdded=null;
     function addX(){
       for(var n=0;n<xs.length;n++){
         var m=xs[(xi++)%xs.length];
         var id=pickFor(m,seen);if(!id)continue;
-        seen[id]=1;items.push(mk(id));order();return true;
+        seen[id]=1;var nw=mk(id);items.push(nw);order();lastAdded=nw;return true;
       }
       return false;
     }
@@ -238,7 +238,7 @@ function build(q,H){
     guard=0;
     while(items.length<maxItems&&t()+2*2<=budget&&guard++<20){
       var before=items.length;if(!addX())break;
-      var last=items[items.length-1],lx=exOf(last.id);
+      var last=lastAdded||items[items.length-1],lx=exOf(last.id);
       if(items.length>before&&t()>budget){ // no cabe: quítalo o recorta series
         var it=items.filter(function(i){return i.id===last.id;})[0];
         while(t()>budget&&it.sets>2)it.sets--;

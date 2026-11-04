@@ -884,7 +884,7 @@ var CFG=window.CF_CONFIG||{};
 var sb=null,me=null,prof=null;
 function hasBackend(){return !!(CFG.SUPABASE_URL&&CFG.SUPABASE_ANON_KEY&&window.supabase);}
 function mirror(){if(S.mode==='local'){ls.set('cf:cfg',S.cfg);ls.set('cf:sessions',S.sessions.slice(0,400));}}
-function saveDraft(){if(S.draft)ls.set('cf:draft',S.draft);else ls.del('cf:draft');}
+function saveDraft(){if(S.draft){if(me)S.draft.uid=me.id;ls.set('cf:draft',S.draft);}else ls.del('cf:draft');}
 function canEditCfg(){return S.mode==='local'||(S.mode==='db'&&S.cfgReady);}
 var cfgBusy=false,cfgAgain=false;
 async function saveCfg(){
@@ -894,7 +894,7 @@ async function saveCfg(){
   if(cfgBusy){cfgAgain=true;return true;}
   cfgBusy=true;
   try{do{cfgAgain=false;var r=await sb.from('app_config').upsert({user_id:me.id,cfg:clone(S.cfg),updated_at:new Date().toISOString()});if(r.error)throw r.error;}while(cfgAgain);}
-  catch(e){toast('No se pudo guardar el cambio. Inténtalo de nuevo.');}
+  catch(e){toast('No se pudo guardar el cambio. Inténtalo de nuevo.');cfgBusy=false;return false;}
   cfgBusy=false;return true;
 }
 function sessRow(s){
@@ -909,12 +909,14 @@ async function saveSession(s){
   S.sessions=[s].concat(S.sessions.filter(function(x){return x.id!==s.id;})).sort(byDateDesc);
   mirror();
 }
-function pendList(){return ls.get('cf:pending')||[];}
-function queueSession(s){var l=pendList().filter(function(x){return x.id!==s.id;});l.push(s);ls.set('cf:pending',l);S.sessions=[s].concat(S.sessions.filter(function(x){return x.id!==s.id;})).sort(byDateDesc);}
+function pendAll(){return ls.get('cf:pending')||[];}
+function pendList(){return pendAll().filter(function(x){return !x.uid||(me&&x.uid===me.id);});}
+function pendDrop(id){ls.set('cf:pending',pendAll().filter(function(x){return x.id!==id;}));}
+function queueSession(s){if(me)s.uid=me.id;var l=pendAll().filter(function(x){return x.id!==s.id;});l.push(s);ls.set('cf:pending',l);S.sessions=[s].concat(S.sessions.filter(function(x){return x.id!==s.id;})).sort(byDateDesc);}
 var flushing=false;
 async function flushPending(){
   if(flushing||S.mode!=='db'||!me||!navigator.onLine)return;var l=pendList();if(!l.length)return;flushing=true;var ok=0;
-  for(var i=0;i<l.length;i++){try{var r=await sb.from('sessions').upsert(sessRow(l[i]));if(r.error)throw r.error;ok++;l=l.filter(function(x){return x.id!==l[i].id;});i--;ls.set('cf:pending',l);}catch(e){break;}}
+  for(var i=0;i<l.length;i++){try{var r=await sb.from('sessions').upsert(sessRow(l[i]));if(r.error)throw r.error;ok++;pendDrop(l[i].id);}catch(e){break;}}
   flushing=false;if(ok){toast(ok===1?'Sesión pendiente subida.':ok+' sesiones pendientes subidas.');}
 }
 async function deleteSession(id){
@@ -939,7 +941,7 @@ async function onSignedIn(user){
     pendList().forEach(function(p){if(!S.sessions.some(function(x){return x.id===p.id;}))S.sessions.unshift(p);});S.sessions.sort(byDateDesc);setTimeout(flushPending,1500);
     S.cfgReady=true;S.sessReady=true;S.slow=false;
   }catch(e){S.slow=true;toast('No se pudieron cargar tus datos. Revisa la conexión y recarga.');}
-  S.soc=newSoc();S.draft=ls.get('cf:draft');checkStale();restoreRest();
+  S.soc=newSoc();S.draft=ls.get('cf:draft');if(S.draft&&S.draft.uid&&S.draft.uid!==user.id)S.draft=null;checkStale();restoreRest();
   rebuildEx();renderStatus();render(true);
   if(prof)loadSocial();
 }
@@ -1530,7 +1532,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=55,verT=0;
+var APP_VER=56,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);

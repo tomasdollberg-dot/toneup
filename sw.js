@@ -6,5 +6,5 @@ self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(func
 self.addEventListener('fetch',function(e){
   var r=e.request,u=new URL(r.url);
   if(r.method!=='GET'||u.origin!==location.origin)return; // Supabase, fuentes y CDN: directo a la red
-  e.respondWith(fetch(r).then(function(res){var cp=res.clone();caches.open(V).then(function(c){c.put(r,cp);});return res;}).catch(function(){return caches.match(r).then(function(m){return m||caches.match('index.html');});}));
+  e.respondWith(fetch(r).then(function(res){var cp=res.clone();caches.open(V).then(function(c){c.put(r,cp);});return res;}).catch(function(){return caches.match(r).then(function(m){return m||(r.mode==='navigate'?caches.match('index.html'):Response.error());});}));
 });
