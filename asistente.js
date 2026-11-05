@@ -55,6 +55,7 @@ var AVOID={
 function S(n,k,m,x){return {n:n,k:k,m:m,x:x||[]};}
 var XP={push:['Hombros','Tríceps','Pecho','Hombros','Core'],pull:['Espalda','Bíceps','Hombros','Espalda','Core'],piernas:['Glúteos','Gemelos','Isquios','Cuádriceps','Core'],full:['Hombros','Glúteos','Core','Gemelos','Bíceps','Tríceps']};
 var TPL={
+ 1:[S('Cuerpo completo','push',['Cuádriceps','Pecho','Espalda','Isquios','Hombros','Glúteos','Bíceps','Tríceps','Core'],XP.full)],
  2:[S('Cuerpo completo A','push',['Cuádriceps','Pecho','Espalda','Isquios','Hombros','Core'],XP.full),
     S('Cuerpo completo B','pull',['Glúteos','Espalda','Pecho','Cuádriceps','Bíceps','Tríceps','Gemelos'],XP.full)],
  3:[S('Cuerpo completo A','push',['Cuádriceps','Pecho','Espalda','Isquios','Hombros','Core'],XP.full),
@@ -80,6 +81,7 @@ var TPL={
    glúteo entrenado 2–3 veces por semana con ejercicios distintos, y tren superior bien repartido. */
 var XF={g:['Glúteos','Abductores','Isquios','Core','Gemelos','Cuádriceps'],u:['Hombros','Espalda','Glúteos','Tríceps','Bíceps','Core'],full:['Glúteos','Abductores','Hombros','Core','Gemelos','Bíceps']};
 var TPLF={
+ 1:[S('Glúteo y cuerpo completo','piernas',['Glúteos','Cuádriceps','Isquios','Espalda','Pecho','Hombros','Abductores','Core'],XF.full)],
  2:[S('Glúteo y piernas','piernas',['Glúteos','Cuádriceps','Isquios','Espalda','Pecho','Core'],XF.full),
     S('Glúteo y cuerpo completo','pull',['Glúteos','Espalda','Hombros','Isquios','Pecho','Abductores','Core'],XF.full)],
  3:[S('Glúteo y piernas','piernas',['Glúteos','Cuádriceps','Isquios','Glúteos','Core'],XF.g),
@@ -177,7 +179,7 @@ function actMods(q){
 }
 
 function build(q,H){
-  var exOf=H.exOf,has=H.has,days=Math.max(2,Math.min(6,q.days||3)),budget=Math.max(25,q.mins||60);
+  var exOf=H.exOf,has=H.has,days=Math.max(1,Math.min(6,q.days||3)),budget=Math.max(25,q.mins||60);
   var f=q.sex==='f',gym=(q.equip||'gym')==='gym'&&q.equip!=='casa',g=parseGear(q);
   if(q.equip==='mancuernas'){gym=false;g.mancuernas=true;g.banco=true;}
   var light=!gym&&g.mancuernas&&g.kgMax>0&&g.kgMax<=8;
@@ -267,7 +269,7 @@ function build(q,H){
   });
   var est=sessions.map(function(s){return minutes(s.items,exOf);});
   var why=[];
-  why.push({e:'freq',x:'Con '+days+' días por semana, '+(f?'repartimos glúteo y piernas en '+(days>=4?'dos o tres':'dos')+' sesiones con ejercicios distintos, y el resto de músculos se entrenan 2 veces.':(days<=3?'cada sesión trabaja todo el cuerpo y cada músculo se entrena 2–3 veces por semana.':days===4?'el cuerpo se reparte en tren superior e inferior y cada músculo se entrena 2 veces por semana.':'repartimos empuje, tirón y piernas, con trabajo extra de superior e inferior.'))});
+  why.push({e:'freq',x:days===1?'Con 1 día por semana, la sesión trabaja todo el cuerpo y cada músculo se entrena una vez por semana. Es el mínimo para mantener y progresar despacio; con 2 días notarías más resultados.':'Con '+days+' días por semana, '+(f?'repartimos glúteo y piernas en '+(days>=4?'dos o tres':'dos')+' sesiones con ejercicios distintos, y el resto de músculos se entrenan 2 veces.':(days<=3?'cada sesión trabaja todo el cuerpo y cada músculo se entrena 2–3 veces por semana.':days===4?'el cuerpo se reparte en tren superior e inferior y cada músculo se entrena 2 veces por semana.':'repartimos empuje, tirón y piernas, con trabajo extra de superior e inferior.'))});
   why.push({e:'vol',x:'Ajusté series y ejercicios a tus '+budget+' minutos: las sesiones salen de unos '+Math.min.apply(null,est)+' a '+Math.max.apply(null,est)+' minutos contando calentamiento y descansos (unos 2–3 minutos por serie en los ejercicios grandes).'});
   if(f)why.push({e:'sex',x:'Para mujer: más peso del trabajo en glúteo y piernas, que es donde suele estar el objetivo y donde se tolera más volumen. Las mujeres suelen recuperarse antes entre series, así que puedes descansar 1:30–2:00 en los ejercicios grandes. Entrena con peso real: levantar con carga también cuida los huesos. Si tu energía cambia a lo largo del mes, ajusta el peso ese día; no hace falta cambiar el plan.'});
   why.push({e:'fail',x:'No hace falta llegar al fallo. Termina las series con 1–3 repeticiones en reserva.'});
@@ -286,9 +288,9 @@ function build(q,H){
   var extra='';
   if(q.goal==='grasa')extra=' Para bajar grasa, lo que más pesa es la alimentación (déficit moderado y proteína suficiente) y moverte a diario; el músculo que mantienes con estas sesiones es lo que se queda.';
   if(q.goal==='salud')extra=' Suma caminar a paso ligero 150 minutos a la semana, que es la recomendación general de actividad física.';
-  var nm=GOALS[q.goal]+' · '+days+' días · '+budget+' min'+(f?' · glúteo':'');
+  var nm=GOALS[q.goal]+' · '+(days===1?'1 día':days+' días')+' · '+budget+' min'+(f?' · glúteo':'');
   var gearTxt=(q.gearText||'').trim();
-  return {est:est,plan:{id:pid,name:nm,note:GOALS[q.goal]+', '+days+' días por semana, '+budget+' minutos, nivel '+NAMES[q.level]+'. Creado con el asistente: es un punto de partida, ajústalo a tus sensaciones.'+(gearTxt?' Material: '+gearTxt.slice(0,160)+'.':'')+extra,sessions:sessions,gen:{asis:true,goal:q.goal,days:days,mins:budget,equip:gym?'gym':'casa',level:q.level,sex:q.sex||'n',gear:g,other:q.other||[],otherN:q.otherN||0,core:!!q.core,cardio:!!q.cardio,light:light,f:f,back:!!q.back,knees:!!q.knees,shoulders:!!q.shoulders},why:why,created:new Date().toISOString()}};
+  return {est:est,plan:{id:pid,name:nm,note:GOALS[q.goal]+', '+(days===1?'1 día':days+' días')+' por semana, '+budget+' minutos, nivel '+NAMES[q.level]+'. Creado con el asistente: es un punto de partida, ajústalo a tus sensaciones.'+(gearTxt?' Material: '+gearTxt.slice(0,160)+'.':'')+extra,sessions:sessions,gen:{asis:true,goal:q.goal,days:days,mins:budget,equip:gym?'gym':'casa',level:q.level,sex:q.sex||'n',gear:g,other:q.other||[],otherN:q.otherN||0,core:!!q.core,cardio:!!q.cardio,light:light,f:f,back:!!q.back,knees:!!q.knees,shoulders:!!q.shoulders},why:why,created:new Date().toISOString()}};
 }
 
 /* ---- personalizar una rutina ya creada: añadir core o cardio ---- */

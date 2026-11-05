@@ -1586,7 +1586,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=65,verT=0;
+var APP_VER=66,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -1784,6 +1784,9 @@ var LUMB_SUB={'peso-muerto-rumano':'peso-muerto-rumano-mancuernas'};
 var LUMB_RESTRICT={'peso-muerto-barra':1,'buenos-dias':1,'rack-pull':1,'peso-muerto-sumo':1};
 var LUMB_MOD={'peso-muerto-rumano':1,'peso-muerto-rumano-mancuernas':1,'sentadilla-barra':1,'remo-barra':1,'sentadilla-frontal':1};
 var TPL={
+ 1:[{n:'Cuerpo completo',k:'push',m:['Cuádriceps','Pecho','Espalda','Isquios','Hombros','Glúteos','Bíceps','Tríceps','Core'],lum:1}],
+ 2:[{n:'Cuerpo completo A',k:'push',m:['Cuádriceps','Pecho','Espalda','Isquios','Hombros','Bíceps','Core'],lum:1},
+    {n:'Cuerpo completo B',k:'pull',m:['Glúteos','Espalda','Pecho','Cuádriceps','Tríceps','Hombros','Gemelos']}],
  3:[{n:'Cuerpo completo A',k:'push',m:['Cuádriceps','Pecho','Espalda','Isquios','Hombros','Bíceps','Core'],lum:1},
     {n:'Cuerpo completo B',k:'pull',m:['Pecho','Espalda','Glúteos','Cuádriceps','Tríceps','Hombros','Gemelos']},
     {n:'Cuerpo completo C',k:'piernas',m:['Cuádriceps','Espalda','Pecho','Isquios','Glúteos','Hombros','Tríceps','Bíceps','Gemelos','Core'],lum:1}],
@@ -1891,13 +1894,13 @@ function genPlan(g){
     var mu=[];s.m.forEach(function(m){if(mu.indexOf(m)<0)mu.push(m);});
     return {key:pid+'-'+(si+1),name:s.n,kind:s.k,focus:mu.join(', '),items:items};
   });
-  var nm=OBJ[g.obj]+' · '+g.days+' días',k=2,full=nm;
+  var nm=OBJ[g.obj]+' · '+(g.days===1?'1 día':g.days+' días'),k=2,full=nm;
   while(S.cfg.plans.some(function(p){return p.name===full;})){full=nm+' ('+k+')';k++;}
   var emph=Object.keys(g.emph).filter(function(m){return g.emph[m];});
   var st=planStats(sessions),big=SHOW.filter(function(m){return !SMALL[m];}).map(function(m){return st.sets[m]||0;}).filter(Boolean);
   var why=[];
   why.push({e:'vol',x:'Salen entre '+Math.min.apply(null,big)+' y '+Math.max.apply(null,big)+' series semanales por músculo grande'+(emph.length?' (con refuerzo en '+emph.join(', ').toLowerCase()+')':'')+'. Brazos, gemelos y core llevan menos porque reciben trabajo indirecto.'});
-  why.push({e:'freq',x:'La plantilla de '+g.days+' días entrena cada músculo '+(g.days===3?'3':'2')+' veces por semana.'});
+  why.push({e:'freq',x:g.days===1?'Con 1 día por semana cada músculo se entrena una sola vez: sirve para mantener y progresar despacio. Con 2 días notarías más resultados.':'La plantilla de '+g.days+' días entrena cada músculo '+(g.days===3?'3':'2')+' veces por semana.'});
   why.push({e:'load',x:used.length&&Object.keys(heavy).length?'Los ejercicios de tus metas de 1RM llevan una serie pesada de 3–5 repeticiones y, en la otra sesión, 6–8: '+Object.keys(heavy).map(function(id){return exOf(id).name;}).join(', ')+'.':(g.obj==='fuerza'?'Los compuestos van en 5–8 repeticiones y los aislados en 10–15.':'Los compuestos van en 6–10 repeticiones y los aislados en 10–15.')});
   why.push({e:'fail',x:'En todas las series, termina con 1–3 repeticiones en reserva.'});
   why.push({e:'rest',x:'Usa los descansos de la app: '+clock(S.cfg.rest.c)+' en compuestos y '+clock(S.cfg.rest.a)+' en aislados.'});
@@ -1907,14 +1910,14 @@ function genPlan(g){
   if(g.obj==='recomp'||emph.indexOf('Core')>=0||S.cfg.goalList.some(function(x){return x.m&&x.m.t==='bf';}))why.push({e:'spot',x:'Si buscas bajar grasa abdominal, apóyate en el déficit calórico y en una proteína de unos 1,6 g/kg; el core del plan es para fuerza.'});
   if(g.obj==='recomp'||g.obj==='hipertrofia')why.push({e:'prot',x:'Para tu peso, 1,6 g/kg equivalen a '+(bodyLatest().kg?fmt(Math.round(bodyLatest().kg*1.6))+' g al día':'unos 1,6 g por cada kilo que pesas')+'.'});
   if(g.lumbar)why.push({e:'lumbar',x:'Con la protección lumbar activada, el peso muerto rumano va con mancuernas en 8–12 repeticiones'+(g.days?' y se añade extensión lumbar en dos sesiones':'')+'.'+(skipped.length?' No incluí '+skipped.join(', ')+' como ejercicio de meta: desactiva la protección lumbar si quieres trabajarlo.':'')});
-  return {id:pid,name:full,note:OBJ[g.obj]+', '+g.days+' días por semana, nivel '+LVL[g.level].toLowerCase()+'. Creado el '+dateShort(new Date().toISOString())+'. Es un punto de partida: ajústalo con tu criterio y tus sensaciones.',sessions:sessions,gen:{obj:g.obj,days:g.days,level:g.level,lumbar:!!g.lumbar,emph:emph,anchors:used},why:why,created:new Date().toISOString()};
+  return {id:pid,name:full,note:OBJ[g.obj]+', '+(g.days===1?'1 día':g.days+' días')+' por semana, nivel '+LVL[g.level].toLowerCase()+'. Creado el '+dateShort(new Date().toISOString())+'. Es un punto de partida: ajústalo con tu criterio y tus sensaciones.',sessions:sessions,gen:{obj:g.obj,days:g.days,level:g.level,lumbar:!!g.lumbar,emph:emph,anchors:used},why:why,created:new Date().toISOString()};
 }
 function genFormHTML(){
   var g=S.gen;
   function ch(label,on,attrs){return '<button class="gc'+(on?' on':'')+'" '+attrs+'>'+label+'</button>';}
   var h='<div class="card gen"><h3>Plan por objetivos</h3><p class="meta">Reglas fijas basadas en estudios; no usa IA. Elige tus datos y se crea un plan nuevo sin tocar los que ya tienes.</p>';
   h+='<div class="gl">Objetivo</div><div class="pchips">'+Object.keys(OBJ).map(function(k){return ch(OBJ[k],g.obj===k,'data-act="gen-set" data-k="obj" data-v="'+k+'"');}).join('')+'</div>';
-  h+='<div class="gl">Días por semana</div><div class="pchips">'+[3,4,5,6].map(function(d){return ch(d,g.days===d,'data-act="gen-set" data-k="days" data-v="'+d+'"');}).join('')+'</div>';
+  h+='<div class="gl">Días por semana</div><div class="pchips">'+[1,2,3,4,5,6].map(function(d){return ch(d,g.days===d,'data-act="gen-set" data-k="days" data-v="'+d+'"');}).join('')+'</div>';
   h+='<div class="gl">Nivel</div><div class="pchips">'+Object.keys(LVL).map(function(k){return ch(LVL[k],g.level===k,'data-act="gen-set" data-k="level" data-v="'+k+'"');}).join('')+'</div>';
   h+='<div class="gl">Zona lumbar</div><div class="pchips">'+ch('Proteger (tu regla)',g.lumbar,'data-act="gen-set" data-k="lumbar" data-v="1"')+ch('Sin restricciones',!g.lumbar,'data-act="gen-set" data-k="lumbar" data-v="0"')+'</div>';
   h+='<div class="gl">Músculos a reforzar (opcional)</div><div class="pchips">'+['Pecho','Espalda','Hombros','Bíceps','Tríceps','Cuádriceps','Isquios','Glúteos','Gemelos','Core'].map(function(m){return ch(m,!!g.emph[m],'data-act="gen-tog" data-k="emph" data-v="'+m+'"');}).join('')+'</div>';
@@ -1935,10 +1938,10 @@ function vPlan(){
   h+='<div class="card pinfo">'+(S.edit?'<label class="field wide">Nombre del plan<input id="pname" type="text" value="'+esc(pl.name)+'" autocomplete="off"></label>':'<div class="pi-n">'+esc(pl.name)+'</div>')+'<p class="meta">'+esc(pl.note||'')+'</p><div class="prow-b">'
     +'<button class="btn sm'+(S.edit?' primary':'')+'" data-act="plan-edit">'+(S.edit?'Terminar edición':'Editar plan')+'</button>'
     +(S.edit?'<button class="btn sm" data-act="plan-rename">Guardar nombre</button>'+cbtn('plan-cancel','Cancelar cambios','btn sm','data-act="plan-cancel"'):'')
+    +cbtn('del-plan','Eliminar plan','btn sm','data-act="plan-del"')
     +(S.mode==='db'&&S.soc.rtOk!==false?'<button class="btn sm" data-act="rt-share">'+(S.soc.routines.some(function(r){return me&&r.owner===me.id&&r.data&&r.data.pid===pl.id;})?'Actualizar rutina compartida':'Compartir con amigos')+'</button>':'')
     +'<details class="more"'+((S.armed==='reset-plan'||S.armed==='del-plan')?' open':'')+'><summary aria-label="Más opciones del plan">⋯</summary><div class="mm"><button class="btn sm" data-act="plan-dup">Duplicar plan</button>'
     +(S.edit&&pl.id==='base'?cbtn('reset-plan','Restaurar original','btn sm','data-act="plan-reset"'):'')
-    +(S.edit&&plans.length>1?cbtn('del-plan','Eliminar plan','btn sm','data-act="plan-del"'):'')
     +'</div></details></div></div>';
   if(!rt.length)h+='<div class="card empty"><p class="meta">Este plan aún no tiene sesiones.</p><p style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="wz-open">Crear con el asistente</button><button class="btn" data-act="sess-new">Añadir una sesión</button></p></div>';
   h+='<details class="card rules"'+(S.whyOpen===pl.id?' open':'')+'><summary>Detalles y evidencia del plan</summary>';
@@ -2088,7 +2091,7 @@ function wzSections(w,skip){
   if(!skip.sex){
   h+='<div class="gl">¿Cómo quieres que adapte la rutina?</div><div class="pchips">'+Object.keys(A.SEX).map(function(k){return ch(A.SEX[k],w.sex===k,'sex',k);}).join('')+'</div>'+(w.sex==='f'?'<p class="meta">Daré más peso al glúteo y a las piernas, con ejercicios distintos cada día, y ajustaré repeticiones y descansos.</p>':'<p class="meta">Solo lo uso para ajustar el reparto de ejercicios; es opcional.</p>');
   }
-  h+='<div class="gl">¿Cuántos días por semana puedes entrenar?</div><div class="pchips">'+[2,3,4,5,6].map(function(d){return ch(d+' días',w.days===d,'days',d);}).join('')+'</div><p class="meta">Si dudas, elige 3: es lo más fácil de mantener.</p>';
+  h+='<div class="gl">¿Cuántos días por semana puedes entrenar?</div><div class="pchips">'+[1,2,3,4,5,6].map(function(d){return ch(d===1?'1 día':d+' días',w.days===d,'days',d);}).join('')+'</div><p class="meta">Si dudas, elige 3: es lo más fácil de mantener.</p>';
   h+='<div class="gl">¿Cuánto tiempo tienes cada día?</div><div class="pchips">'+[30,45,60,75,90].map(function(m){return ch(m+' min',w.mins===m,'mins',m);}).join('')+'</div><p class="meta">Cuento calentamiento, series y descansos, y llenaré la sesión hasta ese tiempo.</p>';
   h+='<div class="gl">¿Dónde vas a entrenar?</div><div class="pchips">'+Object.keys(A.EQUIP).map(function(k){return ch(A.EQUIP[k],w.equip===k,'equip',k);}).join('')+'</div>';
   if(w.equip==='casa'){
@@ -2822,8 +2825,10 @@ var ACT={
     var p=clone(activePlan());p.id='d'+Date.now().toString(36);p.name=p.name+' (copia)';delete p.created;S.cfg.plans.push(p);S.cfg.activePlan=p.id;S.edit=false;saveCfg();render(true);toast('Plan duplicado.');
   },
   'plan-del':function(){
-    if(!canEditCfg()||S.cfg.plans.length<2)return;
-    var id=S.cfg.activePlan;S.cfg.plans=S.cfg.plans.filter(function(p){return p.id!==id;});S.cfg.activePlan=S.cfg.plans[0].id;S.edit=false;saveCfg();render(true);toast('Plan eliminado. Tu historial se conserva.');
+    if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
+    var id=S.cfg.activePlan;S.cfg.plans=S.cfg.plans.filter(function(p){return p.id!==id;});
+    if(!S.cfg.plans.length)S.cfg.plans=[{id:'mi-plan',name:'Mi plan',note:'Aquí irá tu rutina. Créala con el asistente (Inicio) o añade tus propias sesiones.',sessions:[]}];
+    S.cfg.activePlan=S.cfg.plans[0].id;S.edit=false;S.sel=null;saveCfg();render(true);toast('Plan eliminado. Tu historial se conserva.');
   },
   'plan-rename':function(){
     if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
