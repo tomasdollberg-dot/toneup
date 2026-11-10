@@ -164,6 +164,10 @@ p{margin:0}
 .drsh{transition:transform .18s ease}.drsh.dragging{transition:none}
 .dragging{box-shadow:0 22px 44px -14px rgba(0,0,0,.4)!important;opacity:.98;outline:2px solid var(--blue);border-radius:var(--r-lg,18px)}
 body.dragmode{-webkit-user-select:none;user-select:none;cursor:grabbing}
+.sx{overflow-x:clip}
+.set.swp{position:relative;z-index:1}
+.set.swp::after{content:"Quitar";position:absolute;top:2px;bottom:2px;left:100%;width:130px;margin-left:4px;border-radius:14px;background:var(--red);color:#fff;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center}
+.set.swgo::after{content:"Suelta para quitar";font-size:13px}
 body.rord .sx>*:not(.sx-h){display:none!important}
 body.rord .sx{margin-bottom:8px;padding-top:2px;padding-bottom:2px}
 body.rord .sx-i{display:none}
@@ -1624,7 +1628,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=73,verT=0;
+var APP_VER=74,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -3125,17 +3129,25 @@ var ACT={
   export:function(){exportCsv();}
 };
 (function(){
-  var y0=null,x0=null,row=null,pulled=false;
-  document.addEventListener('touchstart',function(e){var t=e.touches[0];y0=window.scrollY<=0?t.clientY:null;x0=t.clientX;pulled=false;row=e.target.closest&&e.target.closest('.set');if(row&&e.target.closest('input'))row=null;},{passive:true});
+  var y0=null,x0=null,ty=0,row=null,pulled=false,sw=false;
+  function reset(r){if(!r)return;r.style.transition='';r.style.transform='';r.classList.remove('swp','swgo');}
+  document.addEventListener('touchstart',function(e){var t=e.touches[0];y0=window.scrollY<=0?t.clientY:null;x0=t.clientX;ty=t.clientY;pulled=false;sw=false;row=e.target.closest&&e.target.closest('.set');if(row&&!S.draft)row=null;},{passive:true});
   document.addEventListener('touchmove',function(e){var t=e.touches[0];
-    if(row){var dx=t.clientX-x0;if(dx<0&&Math.abs(dx)>Math.abs(t.clientY-(y0==null?t.clientY:y0)))row.style.transform='translateX('+Math.max(dx,-110)+'px)';}
+    if(row){var dx=t.clientX-x0,dy=t.clientY-ty;
+      if(!sw&&dx<-12&&Math.abs(dx)>Math.abs(dy)*1.5){sw=true;row.style.transition='none';row.classList.add('swp');if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();}
+      if(sw){var m=Math.max(dx,-130);row.style.transform='translateX('+Math.min(m,0)+'px)';row.classList.toggle('swgo',dx<-80);}
+    }
     if(y0!=null&&!row&&t.clientY-y0>90&&(S.tab==='soc'||S.tab==='perfil')&&S.mode==='db'&&!pulled){pulled=true;var q=document.createElement('div');q.className='ptr';q.textContent='Actualizando…';document.body.appendChild(q);setTimeout(function(){q.remove();},1200);if(S.soc&&!S.soc.loading){loadSocial();}}
   },{passive:true});
   document.addEventListener('touchend',function(e){
     if(row){var t=e.changedTouches[0],dx=t.clientX-x0,r=row;row=null;
-      if(dx<-90&&S.draft&&r.dataset.i!=null){var it=S.draft.items[+r.dataset.i];if(it&&it.sets.length>1){var j=+r.dataset.j,rm=it.sets.splice(j,1)[0];saveDraft();render(true);toastUndo('Serie quitada',function(){it.sets.splice(j,0,rm);saveDraft();render(true);});return;}}
-      r.style.transform='';}
+      if(sw&&dx<-80&&S.draft&&r.dataset.i!=null){var it=S.draft.items[+r.dataset.i];
+        if(it&&it.sets.length>1){var j=+r.dataset.j,rm=it.sets.splice(j,1)[0];saveDraft();render(true);toastUndo('Serie quitada',function(){it.sets.splice(j,0,rm);saveDraft();render(true);});sw=false;return;}
+        toast('Un ejercicio necesita al menos una serie. Si no lo quieres, usa «Quitar ejercicio».');
+      }
+      reset(r);sw=false;}
   },{passive:true});
+  document.addEventListener('touchcancel',function(){if(row){reset(row);row=null;sw=false;}},{passive:true});
 })();
 document.addEventListener('click',function(e){
   var b=e.target.closest('[data-act]');if(!b)return;
