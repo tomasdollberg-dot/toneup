@@ -160,6 +160,11 @@ p{margin:0}
 .week-t b{font-family:var(--font-num);color:var(--ink);font-size:16px}
 
 /* botones */
+.sx-h,.prow.ed .pn{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.drsh{transition:transform .18s ease}.drsh.dragging{transition:none}
+.dragging{box-shadow:0 22px 44px -14px rgba(0,0,0,.4)!important;opacity:.98;outline:2px solid var(--blue);border-radius:var(--r-lg,18px)}
+body.dragmode{-webkit-user-select:none;user-select:none;cursor:grabbing}
+.rhint{font-size:12.5px;color:var(--muted);margin:2px 0 10px}
 .btn{border:1.5px solid var(--bd);background:var(--raised);color:var(--ink);box-shadow:none;border-radius:var(--r-md);padding:10px 16px;font-weight:600;font-size:14px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .btn:hover{border-color:var(--ink)}
 .btn.primary{background:var(--blue);color:var(--on-color);border-color:var(--blue);box-shadow:0 6px 16px -8px var(--blue)}
@@ -1589,7 +1594,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=69,verT=0;
+var APP_VER=70,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -1673,6 +1678,7 @@ function vTrain(d){
     +'<label class="chk"><input type="checkbox" data-w="mov"'+(d.warm.mov?' checked':'')+'><span>5–10 min de movilidad o cardio suave</span></label>'
     +'<label class="chk"><input type="checkbox" data-w="apx"'+(d.warm.apx?' checked':'')+'><span>Series de aproximación del primer ejercicio (toca el número de serie para marcarla como «A»)</span></label>'
     +'<label class="chk"><input type="checkbox" data-w="abs"'+(d.warm.abs?' checked':'')+'><span>Abdomen, incorporado de forma progresiva</span></label></details>';
+  if(d.items.length>1)h+='<p class="rhint">Mantén pulsado un ejercicio y arrástralo para cambiar el orden.</p>';
   d.items.forEach(function(it,i){h+=exHTML(it,i,d);});
   h+='<button class="btn block" data-act="open-picker" data-mode="draft">'+ic(I.plus,18)+'Añadir ejercicio</button>';
   h+='<div class="fin" style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn sc" style="flex:1;min-width:180px;min-height:54px;font-size:16px" data-act="finish">Terminar sesión</button></div>'+cbtn('discard','Cancelar entrenamiento','btn cancel-tr','data-act="discard"')+'';
@@ -1710,7 +1716,7 @@ function exHTML(it,i,d){
   });
   h+=it.sn!=null?'<textarea class="xnote" data-xn="'+i+'" rows="2" maxlength="300" placeholder="Nota: ajuste del asiento, molestias, sensaciones…" aria-label="Nota del ejercicio">'+esc(it.sn)+'</textarea>':'<button class="lnk xn-add" data-act="xn-open" data-i="'+i+'">+ Añadir nota</button>';
   h+='<button class="addset" data-act="add-set" data-i="'+i+'">+ Añadir serie ('+clock(rs)+')</button>';
-  h+='<div class="ex-f"><button class="btn sm" data-act="swap-open" data-mode="draft" data-i="'+i+'">Cambiar ejercicio</button><button class="btn sm" data-act="ache-ex" data-i="'+i+'">Me duele</button>'+(it.sets.length>1?'<button class="btn sm" data-act="del-set" data-i="'+i+'" aria-label="Quitar última serie">'+ic(I.minus,16)+'Quitar serie</button>':'')+cbtn('rm:'+i,'Quitar ejercicio','btn sm','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+platesHTML(it,d)+'</div>';
+  h+='<div class="ex-f"><button class="btn sm" data-act="open-picker" data-mode="draft" data-at="'+i+'" aria-label="Añadir un ejercicio debajo de '+esc(ex.name)+'">'+ic(I.plus,16)+'Añadir ejercicio</button><button class="btn sm" data-act="swap-open" data-mode="draft" data-i="'+i+'">Cambiar ejercicio</button><button class="btn sm" data-act="ache-ex" data-i="'+i+'">Me duele</button>'+(it.sets.length>1?'<button class="btn sm" data-act="del-set" data-i="'+i+'" aria-label="Quitar última serie">'+ic(I.minus,16)+'Quitar serie</button>':'')+cbtn('rm:'+i,'Quitar ejercicio','btn sm','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+platesHTML(it,d)+'</div>';
   return h+'</section>';
 }
 
@@ -1962,10 +1968,11 @@ function vPlan(){
   rt.forEach(function(r){
     if(focusK&&r.key!==focusK)return;
     h+='<section class="card k-'+r.kind+'"><div class="s-h"><span class="plate"></span>'+(S.edit?'<input class="sname" type="text" maxlength="40" data-sn="'+esc(r.key)+'" value="'+esc(r.name)+'" aria-label="Nombre de la sesión" autocomplete="off">'+cbtn('sd:'+r.key,'Eliminar','btn sm','data-act="s-del" data-k="'+esc(r.key)+'"'):'<span class="nm">'+esc(r.name)+'</span><button class="btn sm sc go" data-act="start-plan" data-k="'+esc(r.key)+'">Entrenar</button>')+'</div><p class="focus">'+esc(r.focus||'')+'</p>';
+    if(S.edit&&r.items.length>1)h+='<p class="rhint">Mantén pulsado un ejercicio y arrástralo para cambiar el orden.</p>';
     r.items.forEach(function(it,i){
       var ex=exOf(it.id),last=it.last;
       var lastTxt=last?fmtSet(ex,last):'sin carga previa';
-      h+='<div class="prow'+(S.edit?' ed':'')+'"><div class="pn">'+esc(ex.name)+(S.edit?' <button class="mini" data-act="swap-open" data-mode="plan" data-k="'+esc(r.key)+'" data-i="'+i+'">Cambiar</button>':'')+(it.note&&!S.edit?'<div class="meta">'+esc(it.note)+'</div>':'')+'</div>';
+      h+='<div class="prow'+(S.edit?' ed':'')+'" data-k="'+esc(r.key)+'" data-i="'+i+'"><div class="pn">'+esc(ex.name)+(S.edit?' <button class="mini" data-act="swap-open" data-mode="plan" data-k="'+esc(r.key)+'" data-i="'+i+'">Cambiar</button> <button class="mini" data-act="open-picker" data-mode="plan" data-k="'+esc(r.key)+'" data-at="'+i+'" aria-label="Añadir un ejercicio debajo de '+esc(ex.name)+'">+ Añadir</button>':'')+(it.note&&!S.edit?'<div class="meta">'+esc(it.note)+'</div>':'')+'</div>';
       if(S.edit){
         h+='<div class="pctl"><button class="ico" data-act="r-up" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Subir">'+ic(I.up,16)+'</button><button class="ico" data-act="r-down" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Bajar">'+ic(I.down,16)+'</button>'
           +'<button class="ico" data-act="r-minus" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Menos series">'+ic(I.minus,16)+'</button><span class="ps">'+it.sets+'×</span><button class="ico" data-act="r-plus" data-k="'+esc(r.key)+'" data-i="'+i+'" aria-label="Más series">'+ic(I.plus,16)+'</button>'
@@ -2368,8 +2375,72 @@ function pickerListHTML(){
   if(!list.length)return '<div class="empty"><strong>No hay resultados</strong><br><small>Prueba con otra palabra o revisa la ortografía.</small></div>';
   return list.map(function(e){return '<button class="pk" data-act="pk-add" data-id="'+esc(e.id)+'"><span>'+esc(e.name)+'<br><small>'+esc(e.grp)+' · '+esc(e.eq)+'</small></span>'+ic(I.plus,18)+'</button>';}).join('');
 }
-function openPicker(mode,key){
-  S.picker={mode:mode,key:key};S.pq='';
+/* ---------- reordenar ejercicios: mantener pulsado y arrastrar ---------- */
+var DR=null;
+(function(){
+  var HOLD=420,MOVE=9,lastDrop=0;
+  function items(it){return Array.prototype.slice.call(it.parentNode.children).filter(function(x){return x.matches(it.classList.contains('sx')?'.sx':'.prow.ed');});}
+  function clean(){
+    if(!DR)return;clearTimeout(DR.t);cancelAnimationFrame(DR.raf);
+    if(DR.active){DR.all.forEach(function(x){x.style.transform='';x.style.transition='';x.style.zIndex='';x.style.position='';x.classList.remove('dragging','drsh');});document.body.classList.remove('dragmode');}
+    DR=null;
+  }
+  function frame(){
+    if(!DR||!DR.active)return;
+    var y=DR.cy,vh=window.innerHeight;
+    if(y<90)window.scrollBy(0,-Math.min(16,(90-y)/3+3));else if(y>vh-120)window.scrollBy(0,Math.min(16,(y-(vh-120))/3+3));
+    var dy=(DR.cy-DR.y0)+(window.pageYOffset-DR.s0);
+    DR.item.style.transform='translateY('+dy+'px) scale(1.02)';
+    var c=DR.top+dy+DR.h/2,to=DR.from,i;
+    for(i=0;i<DR.all.length;i++){if(i>DR.from&&c>DR.cen[i])to=i;if(i<DR.from&&c<DR.cen[i]&&to>i)to=i;}
+    DR.to=to;
+    DR.all.forEach(function(x,j){if(j===DR.from)return;var sh=0;if(j>DR.from&&j<=to)sh=-(DR.h+DR.gap);else if(j<DR.from&&j>=to)sh=DR.h+DR.gap;x.style.transform=sh?'translateY('+sh+'px)':'';});
+    DR.raf=requestAnimationFrame(frame);
+  }
+  function activate(){
+    if(!DR||!document.body.contains(DR.item)){clean();return;}
+    var all=items(DR.item),r=all.map(function(x){return x.getBoundingClientRect();}),sy=window.pageYOffset,from=all.indexOf(DR.item);
+    DR.all=all;DR.from=from;DR.to=from;DR.s0=sy;DR.h=r[from].height;DR.top=r[from].top+sy;DR.cen=r.map(function(b){return b.top+sy+b.height/2;});
+    DR.gap=all.length>1?Math.max(0,(all.length>from+1?r[from+1].top-r[from].bottom:r[from].top-r[from-1].bottom)):0;
+    DR.active=true;document.body.classList.add('dragmode');
+    all.forEach(function(x){x.classList.add('drsh');x.style.position='relative';});
+    DR.item.classList.add('dragging');DR.item.style.zIndex='60';
+    try{if(navigator.vibrate)navigator.vibrate(18);}catch(e){}
+    frame();
+  }
+  document.addEventListener('pointerdown',function(e){
+    if(DR)clean();
+    if(e.pointerType==='mouse'&&e.button!==0)return;
+    if(!e.target.closest)return;
+    var h=e.target.closest('.sx-h,.prow.ed .pn');if(!h||e.target.closest('input,select,textarea,.sx-i'))return;
+    var item=h.closest('.sx,.prow.ed');if(!item||items(item).length<2)return;
+    DR={item:item,x0:e.clientX,y0:e.clientY,cx:e.clientX,cy:e.clientY,id:e.pointerId,active:false,t:setTimeout(activate,HOLD)};
+  },true);
+  document.addEventListener('pointermove',function(e){
+    if(!DR||e.pointerId!==DR.id)return;
+    DR.cx=e.clientX;DR.cy=e.clientY;
+    if(!DR.active&&(Math.abs(e.clientX-DR.x0)>MOVE||Math.abs(e.clientY-DR.y0)>MOVE))clean();
+  },true);
+  function end(e){
+    if(!DR||(e&&e.pointerId!==DR.id))return;
+    var d=DR,ok=d.active&&document.body.contains(d.item)&&e&&e.type==='pointerup';
+    var from=d.from,to=d.to,it=d.item;
+    clean();
+    if(!d.active)return;
+    lastDrop=Date.now();
+    if(ok&&from!==to){
+      if(it.classList.contains('sx')&&S.draft){var a=S.draft.items.splice(from,1)[0];S.draft.items.splice(to,0,a);saveDraft();render(true);toast('Ejercicio movido.');}
+      else if(it.classList.contains('prow')){var k=it.dataset.k;editRoutine(function(rt){var arr=rt.find(function(x){return x.key===k;}).items,m=arr.splice(from,1)[0];arr.splice(to,0,m);});}
+    }
+  }
+  document.addEventListener('pointerup',end,true);
+  document.addEventListener('pointercancel',function(e){if(DR&&DR.active&&e.pointerId===DR.id){/* iOS puede cancelar: soltar donde esté */ end(Object.assign({},{type:'pointerup',pointerId:e.pointerId}));}else clean();},true);
+  document.addEventListener('touchmove',function(e){if(DR&&DR.active)e.preventDefault();},{passive:false});
+  document.addEventListener('contextmenu',function(e){if(DR)e.preventDefault();},true);
+  document.addEventListener('click',function(e){if(Date.now()-lastDrop<450){e.stopPropagation();e.preventDefault();}},true);
+})();
+function openPicker(mode,key,at){
+  S.picker={mode:mode,key:key,at:(at===undefined?null:at)};S.pq='';
   $('#picker').innerHTML='<div class="sheet-bg" data-act="pk-close"></div><div class="sheet" role="dialog" aria-label="Añadir ejercicio"><div class="sheet-in"><div class="sheet-h"><strong>Añadir ejercicio</strong><button class="ico" data-act="pk-close" aria-label="Cerrar">'+ic(I.x,20)+'</button></div><div class="search"><input id="pq" type="search" placeholder="Buscar ejercicio…" autocomplete="off" aria-label="Buscar ejercicio"></div><div id="plist">'+pickerListHTML()+'</div></div></div>';
 }
 
@@ -2621,7 +2692,7 @@ var ACT={
     if(S.timer&&!S.timer.ex)S.timer.sec=S.timer.sec;
     saveCfg();renderTimer();render(true);
   },
-  'open-picker':function(b){openPicker(b.dataset.mode,b.dataset.k);},
+  'open-picker':function(b){openPicker(b.dataset.mode,b.dataset.k,b.dataset.at===undefined?null:+b.dataset.at);},
   'pk-close':function(){closePicker();},
   'swap-open':function(b){openSwap(b.dataset.mode,b.dataset.k,+b.dataset.i);},
   'swap-eq':function(b){if(S.swap){S.swap.eq=b.dataset.v;renderSwap();}},
@@ -2641,8 +2712,8 @@ var ACT={
   'ex-info':function(b){S.xi=S.xi===b.dataset.id?null:b.dataset.id;render(true);},
   'pk-add':function(b){
     var id=b.dataset.id,p=S.picker;if(!p)return;
-    if(p.mode==='draft'&&S.draft){S.draft.items.push({id:id,last:null,note:'',sets:[emptySet(),emptySet(),emptySet()]});saveDraft();closePicker();render(true);toast('Añadido a la sesión.');}
-    else if(p.mode==='plan'){if(editRoutine(function(rt){var r=rt.find(function(x){return x.key===p.key;});if(r)r.items.push({id:id,sets:3,last:null,note:''});})){closePicker();toast('Añadido al plan.');}}
+    if(p.mode==='draft'&&S.draft){var pos=(p.at==null)?S.draft.items.length:Math.min(p.at+1,S.draft.items.length);S.draft.items.splice(pos,0,{id:id,last:null,note:'',sets:[emptySet(),emptySet(),emptySet()]});saveDraft();closePicker();render(true);toast(p.at==null?'Añadido a la sesión.':'Añadido debajo.');setTimeout(function(){var el=document.querySelector('.sx[data-i="'+pos+'"]');if(el&&el.scrollIntoView)el.scrollIntoView({block:'center',behavior:'smooth'});},60);}
+    else if(p.mode==='plan'){if(editRoutine(function(rt){var r=rt.find(function(x){return x.key===p.key;});if(r){var ni={id:id,sets:3,last:null,note:''};if(p.at==null)r.items.push(ni);else r.items.splice(Math.min(p.at+1,r.items.length),0,ni);}})){closePicker();toast(p.at==null?'Añadido al plan.':'Añadido debajo.');}}
   },
   'rt-edit':function(b){S.tab='plan';S.edit=true;S.editKey=b.dataset.k||null;render(true);window.scrollTo(0,0);},
   'plan-cancel':function(){
