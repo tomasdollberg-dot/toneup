@@ -1630,7 +1630,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=77,verT=0;
+var APP_VER=78,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -1690,16 +1690,16 @@ function vHoy(){
     return h;
   }
   var key=S.sel&&rt.some(function(r){return r.key===S.sel;})?S.sel:sug,cur=rt.find(function(r){return r.key===key;})||rt[0];
-  h+='<section class="card hero k-'+cur.kind+'"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 4px"><p class="eyebrow" style="margin:0">'+(key===sug?'Siguiente sesión':'Sesión elegida')+'</p><button class="btn sm" data-act="rt-edit" data-k="'+esc(cur.key)+'" aria-label="Editar esta rutina antes de empezar">Editar rutina</button></div><h3 class="hero-n">'+esc(cur.name)+'</h3><p class="meta">'+esc(sessInfo(cur))+'</p>'
-    +'<ul class="hero-l">'+cur.items.slice(0,8).map(function(it){return '<li><span>'+esc(exOf(it.id).name)+'</span><b class="num">'+it.sets+'×</b></li>';}).join('')+(cur.items.length>8?'<li class="more">y '+(cur.items.length-8)+' más…</li>':'')+'</ul>'
-    +'<button class="btn sc block big" data-act="pick" data-k="'+esc(cur.key)+'">Empezar rutina</button><button class="btn block" style="margin-top:8px;min-height:48px" data-act="rt-edit" data-k="'+esc(cur.key)+'">Editar rutina</button><button class="lnk ache-l" data-act="ache-open" data-k="'+esc(cur.key)+'">'+(achActive()?'Molestia activa: '+esc((AQZ.find(function(z){return z[0]===achActive().zone;})||[0,''])[1])+' · revisar':'¿Te molesta algo hoy?')+'</button></section>';
   h+='<div class="toolrow"><span class="week-t"><b>'+wk.size+'</b> de '+rt.length+' sesiones esta semana</span></div>';
   if(rt.length>1){
-    h+='<p class="eyebrow" style="margin:6px 0 8px">Elegir otra sesión</p><div class="chips">'+rt.map(function(r){
+    h+='<p class="eyebrow" style="margin:6px 0 8px">Elige tu sesión</p><div class="chips">'+rt.map(function(r){
       var on=r.key===cur.key;
       return '<button class="chip k-'+r.kind+(on?' on':'')+'" data-act="sel" data-k="'+esc(r.key)+'"><span class="top"><span class="plate"></span>'+(wk.has(r.key)?'<span class="tk">'+ic(I.check,18)+'</span>':'')+'</span><span><span class="nm">'+esc(r.name)+'</span><br><span class="sub">'+(r.key===sug?'Siguiente':wk.has(r.key)?'Hecha':'&nbsp;')+'</span></span></button>';
     }).join('')+'</div>';
   }
+  h+='<section class="card hero k-'+cur.kind+'"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 4px"><p class="eyebrow" style="margin:0">'+(key===sug?'Siguiente sesión':'Sesión elegida')+'</p><button class="btn sm" data-act="rt-edit" data-k="'+esc(cur.key)+'" aria-label="Editar esta rutina antes de empezar">Editar rutina</button></div><h3 class="hero-n">'+esc(cur.name)+'</h3><p class="meta">'+esc(sessInfo(cur))+'</p>'
+    +'<ul class="hero-l">'+cur.items.slice(0,8).map(function(it){return '<li><span>'+esc(exOf(it.id).name)+'</span><b class="num">'+it.sets+'×</b></li>';}).join('')+(cur.items.length>8?'<li class="more">y '+(cur.items.length-8)+' más…</li>':'')+'</ul>'
+    +'<button class="btn sc block big" data-act="pick" data-k="'+esc(cur.key)+'">Empezar rutina</button><button class="btn block" style="margin-top:8px;min-height:48px" data-act="rt-edit" data-k="'+esc(cur.key)+'">Editar rutina</button><button class="lnk ache-l" data-act="ache-open" data-k="'+esc(cur.key)+'">'+(achActive()?'Molestia activa: '+esc((AQZ.find(function(z){return z[0]===achActive().zone;})||[0,''])[1])+' · revisar':'¿Te molesta algo hoy?')+'</button></section>';
   return h;
 }
 function vTrain(d){
@@ -2661,7 +2661,7 @@ var ACT={
   pick:function(b){var k=b.dataset.k;var ac=achActive();if(ac&&!S.draft&&!(S.aqAsked&&S.aqAsked[k])){S.aqAsked=S.aqAsked||{};S.aqAsked[k]=1;openAche('pre',k,null,{zone:ac.zone,lvl:ac.lvl});return;}if(S.draft&&S.draft.key===k){S.min=false;render(true);return;}if(S.draft&&draftProgress(S.draft)>0){S.pendingSwitch=k;S.min=true;render(true);return;}startDraft(k);},
   'switch-yes':function(){startDraft(S.pendingSwitch);},
   'switch-no':function(){S.pendingSwitch=null;S.min=false;render(true);},
-  sel:function(b){S.sel=b.dataset.k;render(true);},
+  sel:function(b){S.sel=b.dataset.k;render(true);setTimeout(function(){var el=document.querySelector('section.hero');if(el&&el.getBoundingClientRect().top>window.innerHeight*0.55)el.scrollIntoView({behavior:'smooth',block:'center'});},50);},
   'train-min':function(){S.min=true;render(true);window.scrollTo(0,0);},
   'train-open':function(){S.min=false;S.tab='hoy';render(true);window.scrollTo(0,0);},
   'summary-close':function(){S.summary=null;render(true);},
