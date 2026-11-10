@@ -1628,7 +1628,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=74,verT=0;
+var APP_VER=75,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -1751,7 +1751,7 @@ function exHTML(it,i,d){
   });
   h+=it.sn!=null?'<textarea class="xnote" data-xn="'+i+'" rows="2" maxlength="300" placeholder="Nota: ajuste del asiento, molestias, sensaciones…" aria-label="Nota del ejercicio">'+esc(it.sn)+'</textarea>':'<button class="lnk xn-add" data-act="xn-open" data-i="'+i+'">+ Añadir nota</button>';
   h+='<button class="addset" data-act="add-set" data-i="'+i+'" aria-label="Añadir serie"><span>Añadir serie</span><i class="pl" aria-hidden="true">+</i></button>';
-  h+='<div class="ex-f"><button class="btn sm" data-act="open-picker" data-mode="draft" data-at="'+i+'" aria-label="Añadir un ejercicio debajo de '+esc(ex.name)+'">'+ic(I.plus,16)+'Añadir ejercicio</button><button class="btn sm" data-act="swap-open" data-mode="draft" data-i="'+i+'">Cambiar ejercicio</button>'+(it.sets.length>1?'<button class="btn sm" data-act="del-set" data-i="'+i+'" aria-label="Quitar última serie">'+ic(I.minus,16)+'Quitar serie</button>':'')+cbtn('rm:'+i,'Quitar ejercicio','btn sm','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+platesHTML(it,d)+'</div>';
+  h+='<div class="ex-f"><button class="btn sm" data-act="open-picker" data-mode="draft" data-at="'+i+'" aria-label="Añadir un ejercicio debajo de '+esc(ex.name)+'">'+ic(I.plus,16)+'Añadir ejercicio</button>'+(it.sets.length>1?'<button class="btn sm" data-act="del-set" data-i="'+i+'" aria-label="Quitar última serie">'+ic(I.minus,16)+'Quitar serie</button>':'')+cbtn('rm:'+i,'Quitar ejercicio','btn sm','data-act="ex-remove" data-i="'+i+'" aria-label="Quitar ejercicio de la sesión"')+platesHTML(it,d)+'</div>';
   return h+'</section>';
 }
 
@@ -2559,7 +2559,7 @@ function renderAche(){
   h+='<p class="eyebrow" style="margin:4px 0 0">¿Cuánto?</p><div class="tpre">'+AQL.map(function(z){return '<button class="gc'+(a.lvl===z[0]?' on':'')+'" data-act="aq-l" data-v="'+z[0]+'">'+z[1]+'</button>';}).join('')+'</div>';
   if(!a.zone||!a.lvl)h+='<p class="meta">Elige la zona y la intensidad y te propongo cambios.</p>';
   else if(a.lvl==='f')h+='<div class="alert"><span><b>Para con esa zona.</b> Un dolor fuerte, punzante, con hinchazón o que no se te pasa no es para entrenarlo. Descansa y consúltalo con un profesional sanitario. Puedes entrenar otras zonas.</span></div>';
-  else if(a.zone==='other')h+='<p class="meta">Para esta zona no tengo una lista de ejercicios de riesgo. Cambia lo que te moleste con «Cambiar ejercicio», baja el peso y para si el dolor aumenta.</p><div class="prow-b">'+(a.mode==='pre'?'<button class="btn primary" data-act="aq-go">Empezar la sesión</button>':'')+'</div>';
+  else if(a.zone==='other')h+='<p class="meta">Para esta zona no tengo una lista de ejercicios de riesgo. Si algo te molesta, quita ese ejercicio y añade otro, baja el peso y para si el dolor aumenta.</p><div class="prow-b">'+(a.mode==='pre'?'<button class="btn primary" data-act="aq-go">Empezar la sesión</button>':'')+'</div>';
   else{
     var rows=aqRows(a);
     if(a.mode==='ex'){
