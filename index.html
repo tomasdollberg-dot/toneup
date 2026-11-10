@@ -176,6 +176,7 @@ body.rord .sx-h::after{content:"≡";font-size:26px;line-height:1;color:var(--mu
 body.rord .rhint{display:none}
 .rtc{margin-top:12px;padding:12px;border-radius:var(--r-md,14px);background:var(--raised);border:1.5px solid var(--blue)}.rtc p{margin:0 0 10px;font-size:14.5px}.rtc div{display:flex;gap:8px;flex-wrap:wrap}
 .pname{width:100%;min-height:50px;margin:0 0 10px;padding:0 14px;border:1.5px solid var(--bd);border-radius:14px;background:var(--surface);font:700 17px var(--font-body);color:var(--ink)}
+.chip.newr{background:transparent;border:2px dashed var(--bd);box-shadow:none;color:var(--muted)}.chip.newr .plus{width:34px;height:34px;border-radius:50%;background:var(--raised);display:grid;place-items:center;color:var(--ink)}.chip.newr .nm{color:var(--ink)}
 .pk.added{opacity:.6}.pk-done{position:sticky;bottom:0;padding:10px 0 4px;background:linear-gradient(to top,var(--surface) 70%,transparent)}
 .rhint{font-size:12.5px;color:var(--muted);margin:2px 0 10px}
 .btn{border:1.5px solid var(--bd);background:var(--raised);color:var(--ink);box-shadow:none;border-radius:var(--r-md);padding:10px 16px;font-weight:600;font-size:14px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px}
@@ -1632,7 +1633,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=80,verT=0;
+var APP_VER=81,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -1693,11 +1694,11 @@ function vHoy(){
   }
   var key=S.sel&&rt.some(function(r){return r.key===S.sel;})?S.sel:sug,cur=rt.find(function(r){return r.key===key;})||rt[0];
   h+='<div class="toolrow"><span class="week-t"><b>'+wk.size+'</b> de '+rt.length+' sesiones esta semana</span></div>';
-  if(rt.length>1){
+  if(rt.length>=1){
     h+='<p class="eyebrow" style="margin:6px 0 8px">Elige tu sesión</p><div class="chips">'+rt.map(function(r){
       var on=r.key===cur.key;
       return '<button class="chip k-'+r.kind+(on?' on':'')+'" data-act="sel" data-k="'+esc(r.key)+'"><span class="top"><span class="plate"></span>'+(wk.has(r.key)?'<span class="tk">'+ic(I.check,18)+'</span>':'')+'</span><span><span class="nm">'+esc(r.name)+'</span><br><span class="sub">'+(r.key===sug?'Siguiente':wk.has(r.key)?'Hecha':'&nbsp;')+'</span></span></button>';
-    }).join('')+'</div>';
+    }).join('')+'<button class="chip newr" data-act="sess-new" aria-label="Crear una rutina nueva"><span class="top"><span class="plus">'+ic(I.plus,22)+'</span></span><span><span class="nm">Nueva rutina</span></span></button></div>';
   }
   h+='<section class="card hero k-'+cur.kind+'"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 4px"><p class="eyebrow" style="margin:0">'+(key===sug?'Siguiente sesión':'Sesión elegida')+'</p><button class="btn sm" data-act="rt-edit" data-k="'+esc(cur.key)+'" aria-label="Editar esta rutina antes de empezar">Editar rutina</button></div><h3 class="hero-n">'+esc(cur.name)+'</h3><p class="meta">'+esc(sessInfo(cur))+'</p>'
     +'<ul class="hero-l">'+cur.items.slice(0,8).map(function(it){return '<li><span>'+esc(exOf(it.id).name)+'</span><b class="num">'+it.sets+'×</b></li>';}).join('')+(cur.items.length>8?'<li class="more">y '+(cur.items.length-8)+' más…</li>':'')+'</ul>'
@@ -2775,7 +2776,17 @@ var ACT={
     saveCfg();renderTimer();render(true);
   },
   'open-picker':function(b){openPicker(b.dataset.mode,b.dataset.k,b.dataset.at===undefined?null:+b.dataset.at,b.dataset.title||'');},
-  'pk-close':function(){closePicker();},
+  'pk-close':function(){
+    var p=S.picker;closePicker();
+    if(p&&p.isNew){
+      var rt=routine(),r=rt.find(function(x){return x.key===p.key;});
+      if(r&&!r.items.length){var ix=rt.indexOf(r);rt.splice(ix,1);S.sel=null;saveCfg();toast('Rutina vacía descartada.');}
+      else if(r){var cnt={};r.items.forEach(function(it){var g=exOf(it.id).grp;cnt[g]=(cnt[g]||0)+1;});var best=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];})[0];
+        r.kind=/^(Espalda|Bíceps|Trapecio|Antebrazo|Lumbar)$/.test(best)?'pull':/^(Cuádriceps|Isquios|Glúteos|Gemelos|Abductores|Aductores)$/.test(best)?'piernas':'push';
+        r.focus=r.focus||'';saveCfg();S.sel=p.key;toast('Rutina creada.');}
+      render(true);window.scrollTo(0,0);
+    }
+  },
   'swap-open':function(b){openSwap(b.dataset.mode,b.dataset.k,+b.dataset.i);},
   'swap-eq':function(b){if(S.swap){S.swap.eq=b.dataset.v;renderSwap();}},
   'swap-care':function(b){if(S.swap){var k=b.dataset.v;S.swap.care[k]=!S.swap.care[k];renderSwap();}},
@@ -3015,10 +3026,10 @@ var ACT={
   },
   'sess-new':function(){
     if(!canEditCfg()){toast('Espera un momento: se están cargando tus datos.');return;}
-    editBegin();var rt=routine(),n=rt.length+1;
-    rt.push({key:'s'+Date.now().toString(36),name:'Sesión '+n,kind:'push',focus:'',items:[]});
-    S.tab='plan';S.edit=true;saveCfg();render(true);window.scrollTo(0,0);
-    var nk=rt[rt.length-1].key;setTimeout(function(){openPicker('plan',nk,null,'Crear rutina');},120);
+    var rt=routine(),n=rt.length+1,nk='s'+Date.now().toString(36);
+    rt.push({key:nk,name:'Rutina '+n,kind:'push',focus:'',items:[]});saveCfg();
+    S.edit=false;S.editSnap=null;S.tab='hoy';S.sel=nk;render(true);
+    setTimeout(function(){openPicker('plan',nk,null,'Crear rutina');if(S.picker)S.picker.isNew=true;var pn=$('#pname');if(pn){pn.focus();pn.select();}},120);
   },
   'wz-cancel':function(){S.wz=null;render(true);},
   'onb-set':function(b){S.onb.d[b.dataset.k]=b.dataset.v;onbSave();render(true);},
