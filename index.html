@@ -1281,7 +1281,8 @@ function doSearch(raw){
     soc.results=r.data;var el=$('#sres');if(el)el.innerHTML=resultsHTML();
   });
 }
-function inviteUrl(){return location.origin+location.pathname.replace(/index\.html$/,'');}
+var PUBLIC_URL='https://toneup-ten.vercel.app/';
+function inviteUrl(){return /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)||location.protocol==='file:'?location.origin+location.pathname.replace(/index\.html$/,''):PUBLIC_URL;}
 function fitPhoto(file,cb){
   var fr=new FileReader();
   fr.onload=function(){var im=new Image();im.onload=function(){var c=document.createElement('canvas'),n=192;c.width=c.height=n;var m=Math.min(im.width,im.height);c.getContext('2d').drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,n,n);cb(c.toDataURL('image/jpeg',.82));};im.onerror=function(){cb(null);};im.src=fr.result;};
@@ -1629,7 +1630,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=76,verT=0;
+var APP_VER=77,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
