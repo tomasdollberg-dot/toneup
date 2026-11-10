@@ -236,6 +236,7 @@ body.rord .rhint{display:none}
 .sw-top{position:sticky;top:0;z-index:15;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 0 8px;margin:-2px 0 6px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px)}
 .sw-ic{width:48px;height:44px;border:0;border-radius:12px;background:var(--raised);display:flex;align-items:center;justify-content:center;color:var(--ink)}
 .sw-el{font-size:17px;color:var(--muted);font-weight:600}
+.btn.danger{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
 .cancel-tr{display:block;width:100%;margin-top:14px;min-height:44px;border:0;border-radius:12px;background:transparent;color:var(--red);font-weight:600;font-size:14px;text-decoration:underline;text-underline-offset:3px}.cancel-tr.armed{background:#C62828;color:#fff;text-decoration:none;font-weight:700;outline:3px solid #ff9a9a}
 .gbig{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:58px;border-radius:14px;border:2px solid #dadce0;background:#fff;color:#1f1f1f;font-weight:700;font-size:17px;box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer}.gbig:active{transform:scale(.98)}
 .gor{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted,#8a94a3);font-size:13px}.gor:before,.gor:after{content:'';flex:1;height:1px;background:currentColor;opacity:.3}
@@ -1628,7 +1629,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=75,verT=0;
+var APP_VER=76,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -2609,6 +2610,14 @@ function editRoutine(fn){
   fn(activePlan().sessions);saveCfg();render(true);return true;
 }
 function startDraft(k){S.min=false;S.sel=null;S.draft=makeDraft(k);S.pendingSwitch=null;S.summary=null;stopRest();saveDraft();render(true);}
+function askCancelEmpty(){
+  S.aq=null;S.swap=null;S.picker=null;S.timer=null;
+  $('#picker').innerHTML='<div class="sheet-bg" data-act="pk-close"></div><div class="sheet" role="alertdialog" aria-label="Cancelar entrenamiento"><div class="sheet-in"><div class="grab"></div>'
+    +'<div class="sheet-h"><strong>¿Cancelar el entrenamiento?</strong></div>'
+    +'<p class="meta" style="margin:0 0 14px">No has marcado ninguna serie como hecha, así que no hay nada que guardar. Si cancelas, se descarta esta sesión.</p>'
+    +'<div style="display:flex;flex-direction:column;gap:8px"><button class="btn primary block" style="min-height:50px" data-act="pk-close">Seguir entrenando</button><button class="btn block danger" style="min-height:50px" data-act="discard-now">Cancelar entrenamiento</button></div></div></div>';
+  afterRender();
+}
 async function finish(){
   var d=S.draft;if(!d)return;
   var items=[],nsets=0,vol=0,prs=[];
@@ -2623,7 +2632,7 @@ async function finish(){
     if(isBW(ex)){var pk=0;histFor(it.id).forEach(function(h){h.sets.forEach(function(s){pk=Math.max(pk,s.kg||0);});});var ck=Math.max.apply(null,work.map(function(s){return s.kg;}).concat([0]));if(pk>0&&ck>pk)prs.push(ex.name);}
     else{var prev=bestE1(it.id),cur=Math.max.apply(null,work.map(function(s){return epley(s.kg,s.reps);}).concat([0]));if(prev>0&&cur>prev+0.01)prs.push(ex.name);}
   });
-  if(!items.length){toast('Marca al menos una serie como hecha.');return;}
+  if(!items.length){askCancelEmpty();return;}
   await initP;
   var now=new Date(),dur=d.startedAt?Math.max(1,Math.round((Date.now()-d.startedAt)/60000)):null;
   var s={id:'s'+now.toISOString().replace(/\D/g,''),date:now.toISOString(),key:d.key,name:d.name,kind:d.kind,dur:dur,items:items,nsets:nsets,vol:Math.round(vol),prs:prs};
@@ -2725,6 +2734,7 @@ var ACT={
   'coach-ok':function(){ls.set('cf:coach',1);render(true);},
   undo:function(){var f=undoFn;undoFn=null;$('#toast').hidden=true;if(f)f();},
   finish:function(){finish();},
+  'discard-now':function(){closePicker();S.draft=null;S.min=false;saveDraft();stopRest();S.pendingSwitch=null;render(true);toast('Entrenamiento cancelado.');},
   discard:function(){S.draft=null;S.min=false;saveDraft();stopRest();S.pendingSwitch=null;render(true);},
   'rest-add':function(){if(rest){rest.end+=30000;rest.total+=30;rest.done=false;persistRest();$('#rest').classList.remove('end');schedSnd();tick();}},
   'rest-skip':function(){stopRest();},
