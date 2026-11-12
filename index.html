@@ -1642,7 +1642,7 @@ async function pollReqs(){
 setInterval(pollReqs,45000);
 window.addEventListener('offline',function(){renderStatus();toast('Sin conexión. Puedes seguir entrenando; guarda la sesión cuando vuelva.');});
 window.addEventListener('online',function(){renderStatus();toast('Conexión recuperada.');setTimeout(flushPending,800);});
-var APP_VER=86,verT=0;
+var APP_VER=87,verT=0;
 async function checkVer(){
   if(Date.now()-verT<600000||!navigator.onLine||location.protocol==='file:')return;verT=Date.now();
   try{var t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();var m=t.match(/var APP_VER=(\d+)/);
@@ -2444,6 +2444,7 @@ function pkDone(){
   if(inList&&n>0){b.dataset.act='pk-more';b.textContent='Listo ('+n+' añadido'+(n>1?'s':'')+')';}
   else{b.dataset.act='pk-close';b.textContent=n>0?'Terminar rutina ('+n+')':'Listo';}
 }
+var PK_LEGS=['Cuádriceps','Isquios','Glúteos','Gemelos','Abductores','Aductores'];
 function pickerListHTML(){
   var q=fold(S.pq.trim()),g=S.pg||null,added=(S.picker&&S.picker.added)||{};
   var byName=function(a,b){return a.name.localeCompare(b.name,'es');};
@@ -2452,12 +2453,18 @@ function pickerListHTML(){
     if(!rs.length)return '<div class="empty"><strong>No hay resultados</strong><br><small>Prueba con otra palabra o revisa la ortografía.</small></div>';
     return rs.map(function(e){return pkRow(e,added);}).join('');
   }
-  if(g){
-    var ls=Array.from(EX.values()).filter(function(e){return e.grp===g;}).sort(byName);
-    return '<button class="pk-back" data-act="pk-back">‹ Todos los músculos</button><p class="pk-gt">'+esc(g)+' <span>'+ls.length+' ejercicios</span></p>'+ls.map(function(e){return pkRow(e,added);}).join('');
-  }
   var cnt={};EX.forEach(function(e){cnt[e.grp]=(cnt[e.grp]||0)+1;});
-  return pkMineHTML()+'<p class="eyebrow" style="margin:2px 0 8px">Elige un músculo</p><div class="mgrid">'+PK_GRPS.filter(function(x){return cnt[x];}).map(function(x){return '<button class="mg" data-act="pk-grp" data-g="'+esc(x)+'"><b>'+esc(x)+'</b><small>'+cnt[x]+' ejercicios</small></button>';}).join('')+'</div>';
+  var tile=function(x,n){return '<button class="mg" data-act="pk-grp" data-g="'+esc(x)+'"><b>'+esc(x)+'</b><small>'+n+' ejercicios</small></button>';};
+  if(g==='Piernas'){
+    var tl=PK_LEGS.reduce(function(a,x){return a+(cnt[x]||0);},0);
+    return '<button class="pk-back" data-act="pk-back">‹ Todos los músculos</button><p class="pk-gt">Piernas <span>'+tl+' ejercicios</span></p><p class="eyebrow" style="margin:2px 0 8px">¿Qué parte?</p><div class="mgrid">'+PK_LEGS.filter(function(x){return cnt[x];}).map(function(x){return tile(x,cnt[x]);}).join('')+'</div>';
+  }
+  if(g){
+    var leg=PK_LEGS.indexOf(g)>=0;
+    var ls=Array.from(EX.values()).filter(function(e){return e.grp===g;}).sort(byName);
+    return '<button class="pk-back" data-act="pk-back">‹ '+(leg?'Piernas':'Todos los músculos')+'</button><p class="pk-gt">'+esc(g)+' <span>'+ls.length+' ejercicios</span></p>'+ls.map(function(e){return pkRow(e,added);}).join('');
+  }
+  return pkMineHTML()+'<p class="eyebrow" style="margin:2px 0 8px">Elige un músculo</p><div class="mgrid">'+PK_GRPS.filter(function(x){return cnt[x]&&PK_LEGS.indexOf(x)<0||x==='Cuádriceps';}).map(function(x){return x==='Cuádriceps'?tile('Piernas',PK_LEGS.reduce(function(a,y){return a+(cnt[y]||0);},0)):tile(x,cnt[x]);}).join('')+'</div>';
 }
 /* ---------- reordenar ejercicios: mantener pulsado y arrastrar ---------- */
 var DR=null;
@@ -2847,7 +2854,7 @@ var ACT={
   'pq-pl':function(b){pqEd(+b.dataset.i,function(it){it.sets=Math.min(10,(it.sets||3)+1);});},
   'pq-mi':function(b){pqEd(+b.dataset.i,function(it){if((it.sets||3)>1)it.sets=(it.sets||3)-1;});},
   'pq-del':function(b){var p=S.picker;if(!p)return;pqEd(+b.dataset.i,function(it,a,i){a.splice(i,1);if(p.added[it.id]){delete p.added[it.id];p.n=Math.max(0,(p.n||1)-1);}});pkDone();},
-  'pk-back':function(){S.pg=null;$('#plist').innerHTML=pickerListHTML();pkDone();var s=document.querySelector('#picker .sheet-in');if(s)s.scrollTop=0;},
+  'pk-back':function(){S.pg=(PK_LEGS.indexOf(S.pg)>=0)?'Piernas':null;$('#plist').innerHTML=pickerListHTML();pkDone();var s=document.querySelector('#picker .sheet-in');if(s)s.scrollTop=0;},
   'pk-more':function(){var q=$('#pq');if(q)q.value='';S.pq='';S.pg=null;$('#plist').innerHTML=pickerListHTML();pkDone();var s=document.querySelector('#picker .sheet-in');if(s)s.scrollTop=0;},
   'pk-add':function(b){
     var id=b.dataset.id,p=S.picker;if(!p)return;
